@@ -146,7 +146,8 @@ def render_retrieval_details(
 def render_repository_option_controls(pending: dict) -> None:
     st.markdown("Choose one repository query to execute:")
     for match in pending["matches"]:
-        label = f"Run {match['query_id']} - {match['intent']} - score {match['hybrid_score']:.3f}"
+        confidence_percent = round(max(0.0, min(1.0, float(match["hybrid_score"]))) * 100)
+        label = f"{match['intent'].title()} — {confidence_percent}% confident"
         if st.button(
             label,
             key=f"repo_option_{pending['request_id']}_{match['query_id']}",
@@ -154,7 +155,6 @@ def render_repository_option_controls(pending: dict) -> None:
         ):
             st.session_state.selected_repository_option = match["query_id"]
             st.rerun()
-        st.caption(match["description"])
 
 
 def render_pending_repository_options() -> None:
