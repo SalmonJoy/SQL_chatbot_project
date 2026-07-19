@@ -147,12 +147,14 @@ def render_retrieval_details(
 def render_repository_option_controls(pending: dict) -> None:
     st.markdown("Choose one repository query to execute:")
     gemini_api_key_present = bool(os.getenv("GEMINI_API_KEY"))
+    st.caption("Special feature: let Gemini pick from these vetted repository options only.")
     if st.button(
-        "Ask AI to choose the best option",
+        "✨ Ask AI to choose the best option",
         key=f"repo_option_{pending['request_id']}_ask_ai",
         use_container_width=True,
         disabled=not gemini_api_key_present,
         help="Gemini will choose only from the displayed vetted repository options.",
+        type="primary",
     ):
         st.session_state.selected_repository_option = ASK_AI_REPOSITORY_OPTION
         st.rerun()
