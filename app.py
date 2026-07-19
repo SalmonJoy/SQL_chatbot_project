@@ -147,9 +147,8 @@ def render_retrieval_details(
 def render_repository_option_controls(pending: dict) -> None:
     st.markdown("Choose one repository query to execute:")
     gemini_api_key_present = bool(os.getenv("GEMINI_API_KEY"))
-    st.caption("Special feature: let Gemini pick from these vetted repository options only.")
     if st.button(
-        "✨ Ask AI to choose the best option",
+        "✨ Ask AI to choose the best SQL option",
         key=f"repo_option_{pending['request_id']}_ask_ai",
         use_container_width=True,
         disabled=not gemini_api_key_present,
@@ -161,7 +160,7 @@ def render_repository_option_controls(pending: dict) -> None:
     if not gemini_api_key_present:
         st.caption("Set `GEMINI_API_KEY` to let AI choose.")
 
-    for match in pending["matches"]:
+    for match in pending["matches"][:3]:
         confidence_percent = round(max(0.0, min(1.0, float(match["hybrid_score"]))) * 100)
         label = f"{match['intent'].title()} — {confidence_percent}% confident"
         if st.button(
@@ -584,7 +583,7 @@ def handle_question(question: str, force_execute: bool, thinking_mode: bool) -> 
                 }
                 log_event["elapsed_ms"] = round((time.perf_counter() - started_at) * 1000, 3)
                 runtime_logger.write(log_event)
-                option_matches = prioritize_ambiguous_options(effective_question, matches[:5])
+                option_matches = prioritize_ambiguous_options(effective_question, matches[:5])[:3]
                 st.session_state.pending_repository_options = {
                     "request_id": request_id,
                     "question": question,
