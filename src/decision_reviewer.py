@@ -241,6 +241,10 @@ def review_decision(
         if not raw_text:
             return error_result("empty_gemini_response", "Gemini returned an empty decision-review response.")
         payload = extract_json_object(raw_text)
-        return normalize_review_payload(raw_text=raw_text, payload=payload, allowed_query_ids={m["query_id"] for m in matches[: config.gemini_decision_review_top_k]})
+        return normalize_review_payload(
+            raw_response=raw_text,
+            payload=payload,
+            allowed_query_ids={m["query_id"] for m in matches[: config.gemini_decision_review_top_k]},
+        )
     except Exception as exc:  # pragma: no cover - protects demo flow from API/runtime issues
         return error_result("gemini_error", f"Gemini decision review failed: {exc}")
