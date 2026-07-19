@@ -1,0 +1,457 @@
+{
+  "generated_at": "2026-07-19T10:31:12.064666+00:00",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_dimensions": 384,
+  "description_source": "data\\optimized_descriptions.json",
+  "record_count": 56,
+  "records": [
+    {
+      "query_id": "q001",
+      "category": "sales",
+      "intent": "total revenue",
+      "description": "Calculates the total revenue generated from all invoices in the system.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q002",
+      "category": "sales",
+      "intent": "revenue by billing country",
+      "description": "Finds revenue by country, showing sales per location and ranking the top ten billing countries by their total financial contribution.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q003",
+      "category": "sales",
+      "intent": "yearly revenue",
+      "description": "Lists each year alongside the total revenue generated from all invoices issued during that period.",
+      "selected_strategy": "entity_focused",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q004",
+      "category": "sales",
+      "intent": "monthly revenue",
+      "description": "Lists each month alongside its corresponding total revenue generated from all invoices.",
+      "selected_strategy": "entity_focused",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q005",
+      "category": "sales",
+      "intent": "average invoice value",
+      "description": "Provides the average invoice amount or typical invoice total for all sales transactions.",
+      "selected_strategy": "query_variation_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q006",
+      "category": "sales",
+      "intent": "invoice count by billing country",
+      "description": "Counts the total number of invoices for each billing country and lists them in descending order of volume.",
+      "selected_strategy": "direct_intent",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q007",
+      "category": "customers",
+      "intent": "top customers by spend",
+      "description": "Shows the top ten spenders by total amount, listing the customers who have spent the most money overall.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q008",
+      "category": "customers",
+      "intent": "customers by country",
+      "description": "Provides a sample list of customer names organized by their country of residence to help review geographic distribution.",
+      "selected_strategy": "business_user_language",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q009",
+      "category": "customers",
+      "intent": "customer purchase frequency",
+      "description": "Top ten shoppers by invoice count, showing who buys most often with their names and total number of purchases.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q010",
+      "category": "customers",
+      "intent": "customers with highest lifetime value by country",
+      "description": "Identify which countries contribute the most to our total revenue by ranking the top ten nations based on customer spending.",
+      "selected_strategy": "business_user_language",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q011",
+      "category": "products",
+      "intent": "best-selling tracks by quantity",
+      "description": "Finds which tracks have sold the most copies and lists the top ten by total quantity sold.",
+      "selected_strategy": "query_variation_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q012",
+      "category": "products",
+      "intent": "best-selling tracks by revenue",
+      "description": "Shows the names of the top ten tracks that have generated the highest total sales revenue.",
+      "selected_strategy": "entity_focused",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q013",
+      "category": "products",
+      "intent": "longest tracks",
+      "description": "Top ten longest tracks by time, showing song name, album, and artist for the longest playing songs.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q014",
+      "category": "products",
+      "intent": "most expensive tracks",
+      "description": "Shows the top 10 pricey tracks, listing the most expensive songs available in the system.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q015",
+      "category": "genres",
+      "intent": "track count by genre",
+      "description": "Counts the total tracks per genre and sorts them by volume, distinct from revenue or sales-based genre rankings.",
+      "selected_strategy": "disambiguating",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q016",
+      "category": "products",
+      "intent": "track count by media type",
+      "description": "Gives the track count split by media type or format, showing volume per category.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q017",
+      "category": "genres",
+      "intent": "best-selling genres by revenue",
+      "description": "Returns the top 10 music genres ranked by total revenue generated from track sales.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q018",
+      "category": "artists",
+      "intent": "artists with most albums",
+      "description": "Returns the top 10 artists ranked by the number of albums they have released.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q019",
+      "category": "albums",
+      "intent": "albums with most tracks",
+      "description": "Returns the top 10 albums ranked by the number of tracks they contain.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q020",
+      "category": "artists",
+      "intent": "artists with highest revenue",
+      "description": "Returns the top 10 artists ranked by total revenue generated from track sales.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q021",
+      "category": "employees",
+      "intent": "customers assigned to each support rep",
+      "description": "Provides a breakdown of how many customers are assigned to each support representative in the system.",
+      "selected_strategy": "query_variation_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q022",
+      "category": "employees",
+      "intent": "revenue by support rep",
+      "description": "Calculates the total revenue generated by each support representative based on the invoices of the customers they support.",
+      "selected_strategy": "baseline_current",
+      "source": "query_repository"
+    },
+    {
+      "query_id": "q023",
+      "category": "employees",
+      "intent": "employee reporting hierarchy",
+      "description": "Shows the boss for each employee and the full chain of command for the entire staff.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q024",
+      "category": "playlists",
+      "intent": "largest playlists by track count",
+      "description": "Finds the biggest playlists by tracks, showing the top ten collections with the most songs included in each list.",
+      "selected_strategy": "noisy_query_aligned",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q025",
+      "category": "playlists",
+      "intent": "most common playlist track genres",
+      "description": "Lists the top 10 music genres that appear most frequently across all tracks contained within playlists.",
+      "selected_strategy": "direct_intent",
+      "source": "description_optimization_experiment"
+    },
+    {
+      "query_id": "q026",
+      "category": "sales",
+      "intent": "latest available month revenue",
+      "description": "Returns revenue for the latest invoice month available in the database, useful for last month or most recent month sales questions.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q027",
+      "category": "sales",
+      "intent": "latest available year revenue",
+      "description": "Returns total revenue for the latest invoice year available in the database.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q028",
+      "category": "sales",
+      "intent": "revenue for specific year",
+      "description": "Returns total revenue for one requested invoice year.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q029",
+      "category": "sales",
+      "intent": "revenue for specific month",
+      "description": "Returns total revenue for one requested invoice month.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q030",
+      "category": "sales",
+      "intent": "highest revenue month",
+      "description": "Finds the invoice month with the highest total revenue.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q031",
+      "category": "sales",
+      "intent": "lowest revenue month",
+      "description": "Finds the invoice month with the lowest total revenue.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q032",
+      "category": "sales",
+      "intent": "total invoice count",
+      "description": "Counts the total number of invoices in the database.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q033",
+      "category": "sales",
+      "intent": "highest value invoices",
+      "description": "Lists the top invoices by total invoice amount.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q034",
+      "category": "sales",
+      "intent": "average invoice value by billing country",
+      "description": "Calculates the average invoice amount for each billing country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q035",
+      "category": "sales",
+      "intent": "revenue by billing city",
+      "description": "Ranks billing cities by total invoice revenue.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q036",
+      "category": "genres",
+      "intent": "best-selling genres by revenue in specific billing country",
+      "description": "Ranks music genres by track sales revenue for one requested billing country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q037",
+      "category": "sales",
+      "intent": "monthly revenue by billing country",
+      "description": "Shows monthly invoice revenue split by billing country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q038",
+      "category": "customers",
+      "intent": "total customer count",
+      "description": "Counts the total number of customers in the database.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q039",
+      "category": "customers",
+      "intent": "customer count by country",
+      "description": "Counts customers in each country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q040",
+      "category": "customers",
+      "intent": "customers in specific country",
+      "description": "Lists customers from one requested country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q041",
+      "category": "customers",
+      "intent": "top customers by spend in specific country",
+      "description": "Ranks customers by total spending within one requested country.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q042",
+      "category": "customers",
+      "intent": "customers with no purchases",
+      "description": "Lists customers who do not have any invoices.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q043",
+      "category": "albums",
+      "intent": "albums by revenue",
+      "description": "Ranks albums by total track sales revenue.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q044",
+      "category": "albums",
+      "intent": "albums by quantity sold",
+      "description": "Ranks albums by the number of tracks sold.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q045",
+      "category": "artists",
+      "intent": "artists by quantity sold",
+      "description": "Ranks artists by the number of tracks sold.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q046",
+      "category": "products",
+      "intent": "media types by revenue",
+      "description": "Ranks media types by total track sales revenue.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q047",
+      "category": "products",
+      "intent": "tracks never sold",
+      "description": "Lists tracks that have never appeared on an invoice line.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q048",
+      "category": "products",
+      "intent": "tracks in specific genre ranked by quantity sold",
+      "description": "Ranks tracks within one requested genre by quantity sold.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q049",
+      "category": "employees",
+      "intent": "support rep revenue for latest available month",
+      "description": "Shows employee or support representative sales revenue for the latest invoice month available in the database.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q050",
+      "category": "employees",
+      "intent": "support rep revenue for specific year",
+      "description": "Shows support representative revenue for one requested invoice year.",
+      "selected_strategy": "manual_broad_coverage",
+      "source": "manual_broad_pack"
+    },
+    {
+      "query_id": "q051",
+      "category": "artists",
+      "intent": "revenue for specific artist",
+      "description": "Returns total track sales revenue for one requested artist.",
+      "selected_strategy": "manual_context_follow_up",
+      "source": "manual_context_query_pack"
+    },
+    {
+      "query_id": "q052",
+      "category": "artists",
+      "intent": "revenue rank for specific artist",
+      "description": "Returns one requested artist's revenue rank and whether that artist is the highest revenue artist.",
+      "selected_strategy": "manual_comparative_follow_up",
+      "source": "manual_domain_guard_query_pack"
+    },
+    {
+      "query_id": "q053",
+      "category": "artists",
+      "intent": "list all artists",
+      "description": "Lists every artist in the Chinook database alphabetically.",
+      "selected_strategy": "manual_logged_issue_coverage",
+      "source": "manual_logged_issue_query_pack"
+    },
+    {
+      "query_id": "q054",
+      "category": "albums",
+      "intent": "list all albums with artists",
+      "description": "Lists every album with its artist in the Chinook database.",
+      "selected_strategy": "manual_logged_issue_coverage",
+      "source": "manual_logged_issue_query_pack"
+    },
+    {
+      "query_id": "q055",
+      "category": "sales",
+      "intent": "highest revenue day",
+      "description": "Returns invoice dates ranked by daily revenue, with the highest sales day first.",
+      "selected_strategy": "manual_logged_issue_coverage",
+      "source": "manual_logged_issue_query_pack"
+    },
+    {
+      "query_id": "q056",
+      "category": "products",
+      "intent": "most common file types by track count",
+      "description": "Ranks media or file types by the number of tracks and marks the most common type.",
+      "selected_strategy": "manual_logged_issue_coverage",
+      "source": "manual_logged_issue_query_pack"
+    }
+  ]
+}

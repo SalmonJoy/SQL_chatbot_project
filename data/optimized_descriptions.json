@@ -1,0 +1,1097 @@
+[
+  {
+    "query_id": "q001",
+    "category": "sales",
+    "intent": "total revenue",
+    "selected_candidate_id": "q001_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Calculates the total revenue generated from all invoices in the system.",
+    "original_description": "Calculates the total revenue generated from all invoices in the system.",
+    "sql": "SELECT SUM([Total]) AS total_revenue FROM [Invoice]",
+    "expected_columns": [
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q002",
+    "category": "sales",
+    "intent": "revenue by billing country",
+    "selected_candidate_id": "q002_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Finds revenue by country, showing sales per location and ranking the top ten billing countries by their total financial contribution.",
+    "original_description": "Returns the total revenue generated per billing country, sorted from highest to lowest revenue.",
+    "sql": "SELECT BillingCountry AS billing_country, SUM(Total) AS total_revenue FROM Invoice GROUP BY BillingCountry ORDER BY total_revenue DESC LIMIT 10",
+    "expected_columns": [
+      "billing_country",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q003",
+    "category": "sales",
+    "intent": "yearly revenue",
+    "selected_candidate_id": "q003_d005",
+    "selected_strategy": "entity_focused",
+    "source": "description_optimization_experiment",
+    "description": "Lists each year alongside the total revenue generated from all invoices issued during that period.",
+    "original_description": "Calculates the total revenue generated from invoices for each year.",
+    "sql": "SELECT strftime('%Y', Invoice.InvoiceDate) AS year, SUM(Invoice.Total) AS total_revenue FROM Invoice GROUP BY strftime('%Y', Invoice.InvoiceDate) ORDER BY year",
+    "expected_columns": [
+      "year",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q004",
+    "category": "sales",
+    "intent": "monthly revenue",
+    "selected_candidate_id": "q004_d005",
+    "selected_strategy": "entity_focused",
+    "source": "description_optimization_experiment",
+    "description": "Lists each month alongside its corresponding total revenue generated from all invoices.",
+    "original_description": "Calculates the total revenue generated for each month by summing the invoice totals.",
+    "sql": "SELECT strftime('%Y-%m', InvoiceDate) AS month, SUM(Total) AS total_revenue FROM Invoice GROUP BY strftime('%Y-%m', InvoiceDate) ORDER BY month",
+    "expected_columns": [
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q005",
+    "category": "sales",
+    "intent": "average invoice value",
+    "selected_candidate_id": "q005_d007",
+    "selected_strategy": "query_variation_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Provides the average invoice amount or typical invoice total for all sales transactions.",
+    "original_description": "Calculates the average total value of all invoices in the system.",
+    "sql": "SELECT AVG([Total]) AS average_invoice_value FROM [Invoice]",
+    "expected_columns": [
+      "average_invoice_value"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q006",
+    "category": "sales",
+    "intent": "invoice count by billing country",
+    "selected_candidate_id": "q006_d002",
+    "selected_strategy": "direct_intent",
+    "source": "description_optimization_experiment",
+    "description": "Counts the total number of invoices for each billing country and lists them in descending order of volume.",
+    "original_description": "Returns the number of invoices grouped by the billing country, sorted from highest to lowest count.",
+    "sql": "SELECT BillingCountry AS billing_country, COUNT(*) AS invoice_count FROM Invoice GROUP BY BillingCountry ORDER BY invoice_count DESC LIMIT 10",
+    "expected_columns": [
+      "billing_country",
+      "invoice_count"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q007",
+    "category": "customers",
+    "intent": "top customers by spend",
+    "selected_candidate_id": "q007_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Shows the top ten spenders by total amount, listing the customers who have spent the most money overall.",
+    "original_description": "Returns the top 10 customers ranked by their total spending across all invoices.",
+    "sql": "SELECT c.FirstName AS first_name, c.LastName AS last_name, SUM(i.Total) AS total_spend FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId ORDER BY total_spend DESC LIMIT 10",
+    "expected_columns": [
+      "first_name",
+      "last_name",
+      "total_spend"
+    ],
+    "tables_used": [
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q008",
+    "category": "customers",
+    "intent": "customers by country",
+    "selected_candidate_id": "q008_d003",
+    "selected_strategy": "business_user_language",
+    "source": "description_optimization_experiment",
+    "description": "Provides a sample list of customer names organized by their country of residence to help review geographic distribution.",
+    "original_description": "Lists the first and last names of customers along with their country, sorted by country and limited to the first 10 results.",
+    "sql": "SELECT c.FirstName AS first_name, c.LastName AS last_name, c.Country AS country FROM Customer c ORDER BY c.Country LIMIT 10",
+    "expected_columns": [
+      "first_name",
+      "last_name",
+      "country"
+    ],
+    "tables_used": [
+      "Customer"
+    ]
+  },
+  {
+    "query_id": "q009",
+    "category": "customers",
+    "intent": "customer purchase frequency",
+    "selected_candidate_id": "q009_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Top ten shoppers by invoice count, showing who buys most often with their names and total number of purchases.",
+    "original_description": "Returns the top 10 customers ranked by the number of invoices they have generated, showing their first name, last name, and total purchase count.",
+    "sql": "SELECT c.FirstName AS customer_first_name, c.LastName AS customer_last_name, COUNT(i.InvoiceId) AS purchase_count FROM Customer c JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY c.CustomerId ORDER BY purchase_count DESC LIMIT 10",
+    "expected_columns": [
+      "customer_first_name",
+      "customer_last_name",
+      "purchase_count"
+    ],
+    "tables_used": [
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q010",
+    "category": "customers",
+    "intent": "customers with highest lifetime value by country",
+    "selected_candidate_id": "q010_d003",
+    "selected_strategy": "business_user_language",
+    "source": "description_optimization_experiment",
+    "description": "Identify which countries contribute the most to our total revenue by ranking the top ten nations based on customer spending.",
+    "original_description": "Returns the top 10 countries ranked by the total lifetime revenue generated from their customers.",
+    "sql": "SELECT i.BillingCountry AS country, SUM(i.Total) AS total_lifetime_value FROM Invoice i GROUP BY i.BillingCountry ORDER BY total_lifetime_value DESC LIMIT 10",
+    "expected_columns": [
+      "country",
+      "total_lifetime_value"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q011",
+    "category": "products",
+    "intent": "best-selling tracks by quantity",
+    "selected_candidate_id": "q011_d007",
+    "selected_strategy": "query_variation_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Finds which tracks have sold the most copies and lists the top ten by total quantity sold.",
+    "original_description": "Returns the top 10 tracks ranked by the total quantity sold across all invoices.",
+    "sql": "SELECT t.Name AS track_name, SUM(il.Quantity) AS total_quantity_sold FROM Track t JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY t.TrackId ORDER BY total_quantity_sold DESC LIMIT 10",
+    "expected_columns": [
+      "track_name",
+      "total_quantity_sold"
+    ],
+    "tables_used": [
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q012",
+    "category": "products",
+    "intent": "best-selling tracks by revenue",
+    "selected_candidate_id": "q012_d005",
+    "selected_strategy": "entity_focused",
+    "source": "description_optimization_experiment",
+    "description": "Shows the names of the top ten tracks that have generated the highest total sales revenue.",
+    "original_description": "Returns the top 10 tracks ranked by total revenue generated from sales.",
+    "sql": "SELECT t.Name AS track_name, SUM(il.UnitPrice * il.Quantity) AS total_revenue FROM Track t JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY t.TrackId ORDER BY total_revenue DESC LIMIT 10",
+    "expected_columns": [
+      "track_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q013",
+    "category": "products",
+    "intent": "longest tracks",
+    "selected_candidate_id": "q013_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Top ten longest tracks by time, showing song name, album, and artist for the longest playing songs.",
+    "original_description": "Returns the top 10 longest tracks by duration in milliseconds, including their name, album title, and artist name.",
+    "sql": "SELECT t.Name AS track_name, a.Title AS album_title, ar.Name AS artist_name, t.Milliseconds AS duration_ms FROM Track t JOIN Album a ON t.AlbumId = a.AlbumId JOIN Artist ar ON a.ArtistId = ar.ArtistId ORDER BY t.Milliseconds DESC LIMIT 10",
+    "expected_columns": [
+      "track_name",
+      "album_title",
+      "artist_name",
+      "duration_ms"
+    ],
+    "tables_used": [
+      "Track",
+      "Album",
+      "Artist"
+    ]
+  },
+  {
+    "query_id": "q014",
+    "category": "products",
+    "intent": "most expensive tracks",
+    "selected_candidate_id": "q014_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Shows the top 10 pricey tracks, listing the most expensive songs available in the system.",
+    "original_description": "Returns the top 10 most expensive tracks based on their unit price, including the track ID, name, and price.",
+    "sql": "SELECT [TrackId] AS track_id, [Name] AS track_name, [UnitPrice] AS unit_price FROM [Track] ORDER BY [UnitPrice] DESC LIMIT 10",
+    "expected_columns": [
+      "track_id",
+      "track_name",
+      "unit_price"
+    ],
+    "tables_used": [
+      "Track"
+    ]
+  },
+  {
+    "query_id": "q015",
+    "category": "genres",
+    "intent": "track count by genre",
+    "selected_candidate_id": "q015_d006",
+    "selected_strategy": "disambiguating",
+    "source": "description_optimization_experiment",
+    "description": "Counts the total tracks per genre and sorts them by volume, distinct from revenue or sales-based genre rankings.",
+    "original_description": "Returns the number of tracks for each genre, sorted from the most popular to the least popular.",
+    "sql": "SELECT g.Name AS genre_name, COUNT(t.TrackId) AS track_count FROM Genre g LEFT JOIN Track t ON g.GenreId = t.GenreId GROUP BY g.GenreId, g.Name ORDER BY track_count DESC LIMIT 10",
+    "expected_columns": [
+      "genre_name",
+      "track_count"
+    ],
+    "tables_used": [
+      "Genre",
+      "Track"
+    ]
+  },
+  {
+    "query_id": "q016",
+    "category": "products",
+    "intent": "track count by media type",
+    "selected_candidate_id": "q016_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Gives the track count split by media type or format, showing volume per category.",
+    "original_description": "Returns the count of tracks grouped by their media type name.",
+    "sql": "SELECT mt.Name AS media_type_name, COUNT(t.TrackId) AS track_count FROM MediaType mt JOIN Track t ON mt.MediaTypeId = t.MediaTypeId GROUP BY mt.MediaTypeId, mt.Name ORDER BY track_count DESC",
+    "expected_columns": [
+      "media_type_name",
+      "track_count"
+    ],
+    "tables_used": [
+      "MediaType",
+      "Track"
+    ]
+  },
+  {
+    "query_id": "q017",
+    "category": "genres",
+    "intent": "best-selling genres by revenue",
+    "selected_candidate_id": "q017_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Returns the top 10 music genres ranked by total revenue generated from track sales.",
+    "original_description": "Returns the top 10 music genres ranked by total revenue generated from track sales.",
+    "sql": "SELECT g.Name AS genre_name, SUM(il.UnitPrice * il.Quantity) AS total_revenue FROM Genre g JOIN Track t ON g.GenreId = t.GenreId JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY g.GenreId, g.Name ORDER BY total_revenue DESC LIMIT 10",
+    "expected_columns": [
+      "genre_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Genre",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q018",
+    "category": "artists",
+    "intent": "artists with most albums",
+    "selected_candidate_id": "q018_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Returns the top 10 artists ranked by the number of albums they have released.",
+    "original_description": "Returns the top 10 artists ranked by the number of albums they have released.",
+    "sql": "SELECT a.Name AS artist_name, COUNT(al.AlbumId) AS album_count FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId GROUP BY a.ArtistId, a.Name ORDER BY album_count DESC LIMIT 10",
+    "expected_columns": [
+      "artist_name",
+      "album_count"
+    ],
+    "tables_used": [
+      "Artist",
+      "Album"
+    ]
+  },
+  {
+    "query_id": "q019",
+    "category": "albums",
+    "intent": "albums with most tracks",
+    "selected_candidate_id": "q019_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Returns the top 10 albums ranked by the number of tracks they contain.",
+    "original_description": "Returns the top 10 albums ranked by the number of tracks they contain.",
+    "sql": "SELECT a.Title AS album_title, COUNT(t.TrackId) AS track_count FROM Album a LEFT JOIN Track t ON a.AlbumId = t.AlbumId GROUP BY a.AlbumId, a.Title ORDER BY track_count DESC LIMIT 10",
+    "expected_columns": [
+      "album_title",
+      "track_count"
+    ],
+    "tables_used": [
+      "Album",
+      "Track"
+    ]
+  },
+  {
+    "query_id": "q020",
+    "category": "artists",
+    "intent": "artists with highest revenue",
+    "selected_candidate_id": "q020_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Returns the top 10 artists ranked by total revenue generated from track sales.",
+    "original_description": "Returns the top 10 artists ranked by total revenue generated from track sales.",
+    "sql": "SELECT a.Name AS artist_name, SUM(il.UnitPrice * il.Quantity) AS total_revenue FROM Artist a JOIN Album al ON a.ArtistId = al.ArtistId JOIN Track t ON al.AlbumId = t.AlbumId JOIN InvoiceLine il ON t.TrackId = il.TrackId GROUP BY a.ArtistId, a.Name ORDER BY total_revenue DESC LIMIT 10",
+    "expected_columns": [
+      "artist_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Artist",
+      "Album",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q021",
+    "category": "employees",
+    "intent": "customers assigned to each support rep",
+    "selected_candidate_id": "q021_d007",
+    "selected_strategy": "query_variation_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Provides a breakdown of how many customers are assigned to each support representative in the system.",
+    "original_description": "Lists each support representative and the count of customers assigned to them.",
+    "sql": "SELECT e.FirstName || ' ' || e.LastName AS support_rep_name, COUNT(c.CustomerId) AS customer_count FROM Employee e LEFT JOIN Customer c ON e.EmployeeId = c.SupportRepId GROUP BY e.EmployeeId ORDER BY customer_count DESC",
+    "expected_columns": [
+      "support_rep_name",
+      "customer_count"
+    ],
+    "tables_used": [
+      "Employee",
+      "Customer"
+    ]
+  },
+  {
+    "query_id": "q022",
+    "category": "employees",
+    "intent": "revenue by support rep",
+    "selected_candidate_id": "q022_d001",
+    "selected_strategy": "baseline_current",
+    "source": "query_repository",
+    "description": "Calculates the total revenue generated by each support representative based on the invoices of the customers they support.",
+    "original_description": "Calculates the total revenue generated by each support representative based on the invoices of the customers they support.",
+    "sql": "SELECT e.FirstName || ' ' || e.LastName AS support_rep_name, SUM(i.Total) AS total_revenue FROM Employee e JOIN Customer c ON e.EmployeeId = c.SupportRepId JOIN Invoice i ON c.CustomerId = i.CustomerId GROUP BY e.EmployeeId ORDER BY total_revenue DESC LIMIT 10",
+    "expected_columns": [
+      "support_rep_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Employee",
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q023",
+    "category": "employees",
+    "intent": "employee reporting hierarchy",
+    "selected_candidate_id": "q023_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Shows the boss for each employee and the full chain of command for the entire staff.",
+    "original_description": "Lists all employees along with their direct manager's name to visualize the reporting structure.",
+    "sql": "SELECT e.EmployeeId AS employee_id, e.FirstName AS employee_first_name, e.LastName AS employee_last_name, m.EmployeeId AS manager_id, m.FirstName AS manager_first_name, m.LastName AS manager_last_name FROM Employee e LEFT JOIN Employee m ON e.ReportsTo = m.EmployeeId ORDER BY m.EmployeeId, e.EmployeeId",
+    "expected_columns": [
+      "employee_id",
+      "employee_first_name",
+      "employee_last_name",
+      "manager_id",
+      "manager_first_name",
+      "manager_last_name"
+    ],
+    "tables_used": [
+      "Employee"
+    ]
+  },
+  {
+    "query_id": "q024",
+    "category": "playlists",
+    "intent": "largest playlists by track count",
+    "selected_candidate_id": "q024_d008",
+    "selected_strategy": "noisy_query_aligned",
+    "source": "description_optimization_experiment",
+    "description": "Finds the biggest playlists by tracks, showing the top ten collections with the most songs included in each list.",
+    "original_description": "Returns the top 10 playlists with the highest number of tracks, showing the playlist name and the count of tracks in each.",
+    "sql": "SELECT p.Name AS playlist_name, COUNT(pt.TrackId) AS track_count FROM Playlist p JOIN PlaylistTrack pt ON p.PlaylistId = pt.PlaylistId GROUP BY p.PlaylistId, p.Name ORDER BY track_count DESC LIMIT 10",
+    "expected_columns": [
+      "playlist_name",
+      "track_count"
+    ],
+    "tables_used": [
+      "Playlist",
+      "PlaylistTrack"
+    ]
+  },
+  {
+    "query_id": "q025",
+    "category": "playlists",
+    "intent": "most common playlist track genres",
+    "selected_candidate_id": "q025_d002",
+    "selected_strategy": "direct_intent",
+    "source": "description_optimization_experiment",
+    "description": "Lists the top 10 music genres that appear most frequently across all tracks contained within playlists.",
+    "original_description": "Returns the top 10 music genres that appear most frequently across all tracks in playlists.",
+    "sql": "SELECT g.Name AS genre_name, COUNT(*) AS track_count FROM Track t JOIN PlaylistTrack pt ON t.TrackId = pt.TrackId JOIN Genre g ON t.GenreId = g.GenreId GROUP BY g.Name ORDER BY track_count DESC LIMIT 10",
+    "expected_columns": [
+      "genre_name",
+      "track_count"
+    ],
+    "tables_used": [
+      "Track",
+      "PlaylistTrack",
+      "Genre"
+    ]
+  },
+  {
+    "query_id": "q026",
+    "category": "sales",
+    "intent": "latest available month revenue",
+    "selected_candidate_id": "q026_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Returns revenue for the latest invoice month available in the database, useful for last month or most recent month sales questions.",
+    "original_description": "Returns revenue for the latest invoice month available in the database, useful for last month or most recent month sales questions.",
+    "sql": "WITH latest_month AS (\n  SELECT strftime('%Y-%m', MAX(InvoiceDate)) AS month\n  FROM Invoice\n)\nSELECT lm.month, ROUND(SUM(i.Total), 2) AS total_revenue\nFROM Invoice i\nJOIN latest_month lm\n  ON strftime('%Y-%m', i.InvoiceDate) = lm.month\nGROUP BY lm.month",
+    "expected_columns": [
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q027",
+    "category": "sales",
+    "intent": "latest available year revenue",
+    "selected_candidate_id": "q027_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Returns total revenue for the latest invoice year available in the database.",
+    "original_description": "Returns total revenue for the latest invoice year available in the database.",
+    "sql": "WITH latest_year AS (\n  SELECT strftime('%Y', MAX(InvoiceDate)) AS year\n  FROM Invoice\n)\nSELECT ly.year, ROUND(SUM(i.Total), 2) AS total_revenue\nFROM Invoice i\nJOIN latest_year ly\n  ON strftime('%Y', i.InvoiceDate) = ly.year\nGROUP BY ly.year",
+    "expected_columns": [
+      "year",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q028",
+    "category": "sales",
+    "intent": "revenue for specific year",
+    "selected_candidate_id": "q028_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Returns total revenue for one requested invoice year.",
+    "original_description": "Returns total revenue for one requested invoice year.",
+    "sql": "SELECT :year AS year, ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nWHERE strftime('%Y', InvoiceDate) = :year",
+    "expected_columns": [
+      "year",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q029",
+    "category": "sales",
+    "intent": "revenue for specific month",
+    "selected_candidate_id": "q029_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Returns total revenue for one requested invoice month.",
+    "original_description": "Returns total revenue for one requested invoice month.",
+    "sql": "SELECT :month AS month, ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nWHERE strftime('%Y-%m', InvoiceDate) = :month",
+    "expected_columns": [
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q030",
+    "category": "sales",
+    "intent": "highest revenue month",
+    "selected_candidate_id": "q030_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Finds the invoice month with the highest total revenue.",
+    "original_description": "Finds the invoice month with the highest total revenue.",
+    "sql": "SELECT strftime('%Y-%m', InvoiceDate) AS month, ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nGROUP BY strftime('%Y-%m', InvoiceDate)\nORDER BY total_revenue DESC, month ASC\nLIMIT 1",
+    "expected_columns": [
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q031",
+    "category": "sales",
+    "intent": "lowest revenue month",
+    "selected_candidate_id": "q031_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Finds the invoice month with the lowest total revenue.",
+    "original_description": "Finds the invoice month with the lowest total revenue.",
+    "sql": "SELECT strftime('%Y-%m', InvoiceDate) AS month, ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nGROUP BY strftime('%Y-%m', InvoiceDate)\nORDER BY total_revenue ASC, month ASC\nLIMIT 1",
+    "expected_columns": [
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q032",
+    "category": "sales",
+    "intent": "total invoice count",
+    "selected_candidate_id": "q032_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Counts the total number of invoices in the database.",
+    "original_description": "Counts the total number of invoices in the database.",
+    "sql": "SELECT COUNT(*) AS invoice_count FROM Invoice",
+    "expected_columns": [
+      "invoice_count"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q033",
+    "category": "sales",
+    "intent": "highest value invoices",
+    "selected_candidate_id": "q033_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Lists the top invoices by total invoice amount.",
+    "original_description": "Lists the top invoices by total invoice amount.",
+    "sql": "SELECT InvoiceId AS invoice_id,\n       InvoiceDate AS invoice_date,\n       BillingCountry AS billing_country,\n       ROUND(Total, 2) AS invoice_total\nFROM Invoice\nORDER BY Total DESC, InvoiceId ASC\nLIMIT 10",
+    "expected_columns": [
+      "invoice_id",
+      "invoice_date",
+      "billing_country",
+      "invoice_total"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q034",
+    "category": "sales",
+    "intent": "average invoice value by billing country",
+    "selected_candidate_id": "q034_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Calculates the average invoice amount for each billing country.",
+    "original_description": "Calculates the average invoice amount for each billing country.",
+    "sql": "SELECT BillingCountry AS billing_country, ROUND(AVG(Total), 2) AS average_invoice_value\nFROM Invoice\nGROUP BY BillingCountry\nORDER BY average_invoice_value DESC, billing_country ASC\nLIMIT 10",
+    "expected_columns": [
+      "billing_country",
+      "average_invoice_value"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q035",
+    "category": "sales",
+    "intent": "revenue by billing city",
+    "selected_candidate_id": "q035_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks billing cities by total invoice revenue.",
+    "original_description": "Ranks billing cities by total invoice revenue.",
+    "sql": "SELECT BillingCity AS billing_city,\n       BillingCountry AS billing_country,\n       ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nGROUP BY BillingCity, BillingCountry\nORDER BY total_revenue DESC, billing_city ASC\nLIMIT 10",
+    "expected_columns": [
+      "billing_city",
+      "billing_country",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q036",
+    "category": "genres",
+    "intent": "best-selling genres by revenue in specific billing country",
+    "selected_candidate_id": "q036_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks music genres by track sales revenue for one requested billing country.",
+    "original_description": "Ranks music genres by track sales revenue for one requested billing country.",
+    "sql": "SELECT g.Name AS genre_name, ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS total_revenue\nFROM Invoice i\nJOIN InvoiceLine il ON i.InvoiceId = il.InvoiceId\nJOIN Track t ON il.TrackId = t.TrackId\nJOIN Genre g ON t.GenreId = g.GenreId\nWHERE i.BillingCountry = :country\nGROUP BY g.Name\nORDER BY total_revenue DESC, genre_name ASC\nLIMIT 10",
+    "expected_columns": [
+      "genre_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice",
+      "InvoiceLine",
+      "Track",
+      "Genre"
+    ]
+  },
+  {
+    "query_id": "q037",
+    "category": "sales",
+    "intent": "monthly revenue by billing country",
+    "selected_candidate_id": "q037_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Shows monthly invoice revenue split by billing country.",
+    "original_description": "Shows monthly invoice revenue split by billing country.",
+    "sql": "SELECT strftime('%Y-%m', InvoiceDate) AS month,\n       BillingCountry AS billing_country,\n       ROUND(SUM(Total), 2) AS total_revenue\nFROM Invoice\nGROUP BY strftime('%Y-%m', InvoiceDate), BillingCountry\nORDER BY month ASC, billing_country ASC",
+    "expected_columns": [
+      "month",
+      "billing_country",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q038",
+    "category": "customers",
+    "intent": "total customer count",
+    "selected_candidate_id": "q038_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Counts the total number of customers in the database.",
+    "original_description": "Counts the total number of customers in the database.",
+    "sql": "SELECT COUNT(*) AS customer_count FROM Customer",
+    "expected_columns": [
+      "customer_count"
+    ],
+    "tables_used": [
+      "Customer"
+    ]
+  },
+  {
+    "query_id": "q039",
+    "category": "customers",
+    "intent": "customer count by country",
+    "selected_candidate_id": "q039_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Counts customers in each country.",
+    "original_description": "Counts customers in each country.",
+    "sql": "SELECT Country AS country, COUNT(*) AS customer_count\nFROM Customer\nGROUP BY Country\nORDER BY customer_count DESC, country ASC",
+    "expected_columns": [
+      "country",
+      "customer_count"
+    ],
+    "tables_used": [
+      "Customer"
+    ]
+  },
+  {
+    "query_id": "q040",
+    "category": "customers",
+    "intent": "customers in specific country",
+    "selected_candidate_id": "q040_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Lists customers from one requested country.",
+    "original_description": "Lists customers from one requested country.",
+    "sql": "SELECT FirstName AS first_name,\n       LastName AS last_name,\n       Email AS email,\n       City AS city,\n       Country AS country\nFROM Customer\nWHERE Country = :country\nORDER BY LastName ASC, FirstName ASC\nLIMIT 50",
+    "expected_columns": [
+      "first_name",
+      "last_name",
+      "email",
+      "city",
+      "country"
+    ],
+    "tables_used": [
+      "Customer"
+    ]
+  },
+  {
+    "query_id": "q041",
+    "category": "customers",
+    "intent": "top customers by spend in specific country",
+    "selected_candidate_id": "q041_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks customers by total spending within one requested country.",
+    "original_description": "Ranks customers by total spending within one requested country.",
+    "sql": "SELECT c.FirstName AS first_name,\n       c.LastName AS last_name,\n       c.Country AS country,\n       ROUND(SUM(i.Total), 2) AS total_spend\nFROM Customer c\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nWHERE c.Country = :country\nGROUP BY c.CustomerId\nORDER BY total_spend DESC, c.LastName ASC, c.FirstName ASC\nLIMIT 10",
+    "expected_columns": [
+      "first_name",
+      "last_name",
+      "country",
+      "total_spend"
+    ],
+    "tables_used": [
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q042",
+    "category": "customers",
+    "intent": "customers with no purchases",
+    "selected_candidate_id": "q042_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Lists customers who do not have any invoices.",
+    "original_description": "Lists customers who do not have any invoices.",
+    "sql": "SELECT c.CustomerId AS customer_id,\n       c.FirstName AS first_name,\n       c.LastName AS last_name,\n       c.Email AS email,\n       c.Country AS country\nFROM Customer c\nLEFT JOIN Invoice i ON c.CustomerId = i.CustomerId\nWHERE i.InvoiceId IS NULL\nORDER BY c.LastName ASC, c.FirstName ASC\nLIMIT 50",
+    "expected_columns": [
+      "customer_id",
+      "first_name",
+      "last_name",
+      "email",
+      "country"
+    ],
+    "tables_used": [
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q043",
+    "category": "albums",
+    "intent": "albums by revenue",
+    "selected_candidate_id": "q043_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks albums by total track sales revenue.",
+    "original_description": "Ranks albums by total track sales revenue.",
+    "sql": "SELECT a.Title AS album_title,\n       ar.Name AS artist_name,\n       ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS total_revenue\nFROM Album a\nJOIN Artist ar ON a.ArtistId = ar.ArtistId\nJOIN Track t ON a.AlbumId = t.AlbumId\nJOIN InvoiceLine il ON t.TrackId = il.TrackId\nGROUP BY a.AlbumId\nORDER BY total_revenue DESC, album_title ASC\nLIMIT 10",
+    "expected_columns": [
+      "album_title",
+      "artist_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Album",
+      "Artist",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q044",
+    "category": "albums",
+    "intent": "albums by quantity sold",
+    "selected_candidate_id": "q044_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks albums by the number of tracks sold.",
+    "original_description": "Ranks albums by the number of tracks sold.",
+    "sql": "SELECT a.Title AS album_title,\n       ar.Name AS artist_name,\n       SUM(il.Quantity) AS total_quantity_sold\nFROM Album a\nJOIN Artist ar ON a.ArtistId = ar.ArtistId\nJOIN Track t ON a.AlbumId = t.AlbumId\nJOIN InvoiceLine il ON t.TrackId = il.TrackId\nGROUP BY a.AlbumId\nORDER BY total_quantity_sold DESC, album_title ASC\nLIMIT 10",
+    "expected_columns": [
+      "album_title",
+      "artist_name",
+      "total_quantity_sold"
+    ],
+    "tables_used": [
+      "Album",
+      "Artist",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q045",
+    "category": "artists",
+    "intent": "artists by quantity sold",
+    "selected_candidate_id": "q045_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks artists by the number of tracks sold.",
+    "original_description": "Ranks artists by the number of tracks sold.",
+    "sql": "SELECT ar.Name AS artist_name,\n       SUM(il.Quantity) AS total_quantity_sold\nFROM Artist ar\nJOIN Album a ON ar.ArtistId = a.ArtistId\nJOIN Track t ON a.AlbumId = t.AlbumId\nJOIN InvoiceLine il ON t.TrackId = il.TrackId\nGROUP BY ar.ArtistId\nORDER BY total_quantity_sold DESC, artist_name ASC\nLIMIT 10",
+    "expected_columns": [
+      "artist_name",
+      "total_quantity_sold"
+    ],
+    "tables_used": [
+      "Artist",
+      "Album",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q046",
+    "category": "products",
+    "intent": "media types by revenue",
+    "selected_candidate_id": "q046_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks media types by total track sales revenue.",
+    "original_description": "Ranks media types by total track sales revenue.",
+    "sql": "SELECT mt.Name AS media_type_name,\n       ROUND(SUM(il.UnitPrice * il.Quantity), 2) AS total_revenue\nFROM MediaType mt\nJOIN Track t ON mt.MediaTypeId = t.MediaTypeId\nJOIN InvoiceLine il ON t.TrackId = il.TrackId\nGROUP BY mt.MediaTypeId\nORDER BY total_revenue DESC, media_type_name ASC",
+    "expected_columns": [
+      "media_type_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "MediaType",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q047",
+    "category": "products",
+    "intent": "tracks never sold",
+    "selected_candidate_id": "q047_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Lists tracks that have never appeared on an invoice line.",
+    "original_description": "Lists tracks that have never appeared on an invoice line.",
+    "sql": "SELECT t.TrackId AS track_id,\n       t.Name AS track_name,\n       a.Title AS album_title,\n       ar.Name AS artist_name\nFROM Track t\nLEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId\nLEFT JOIN Album a ON t.AlbumId = a.AlbumId\nLEFT JOIN Artist ar ON a.ArtistId = ar.ArtistId\nWHERE il.InvoiceLineId IS NULL\nORDER BY t.Name ASC\nLIMIT 50",
+    "expected_columns": [
+      "track_id",
+      "track_name",
+      "album_title",
+      "artist_name"
+    ],
+    "tables_used": [
+      "Track",
+      "InvoiceLine",
+      "Album",
+      "Artist"
+    ]
+  },
+  {
+    "query_id": "q048",
+    "category": "products",
+    "intent": "tracks in specific genre ranked by quantity sold",
+    "selected_candidate_id": "q048_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Ranks tracks within one requested genre by quantity sold.",
+    "original_description": "Ranks tracks within one requested genre by quantity sold.",
+    "sql": "SELECT t.Name AS track_name,\n       g.Name AS genre_name,\n       COALESCE(SUM(il.Quantity), 0) AS total_quantity_sold\nFROM Genre g\nJOIN Track t ON g.GenreId = t.GenreId\nLEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId\nWHERE g.Name = :genre_name\nGROUP BY t.TrackId\nORDER BY total_quantity_sold DESC, track_name ASC\nLIMIT 10",
+    "expected_columns": [
+      "track_name",
+      "genre_name",
+      "total_quantity_sold"
+    ],
+    "tables_used": [
+      "Genre",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q049",
+    "category": "employees",
+    "intent": "support rep revenue for latest available month",
+    "selected_candidate_id": "q049_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Shows employee or support representative sales revenue for the latest invoice month available in the database.",
+    "original_description": "Shows employee or support representative sales revenue for the latest invoice month available in the database.",
+    "sql": "WITH latest_month AS (\n  SELECT strftime('%Y-%m', MAX(InvoiceDate)) AS month\n  FROM Invoice\n)\nSELECT e.FirstName || ' ' || e.LastName AS support_rep_name,\n       lm.month,\n       ROUND(SUM(i.Total), 2) AS total_revenue\nFROM Employee e\nJOIN Customer c ON e.EmployeeId = c.SupportRepId\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nJOIN latest_month lm ON strftime('%Y-%m', i.InvoiceDate) = lm.month\nGROUP BY e.EmployeeId, lm.month\nORDER BY total_revenue DESC, support_rep_name ASC",
+    "expected_columns": [
+      "support_rep_name",
+      "month",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Employee",
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q050",
+    "category": "employees",
+    "intent": "support rep revenue for specific year",
+    "selected_candidate_id": "q050_manual",
+    "selected_strategy": "manual_broad_coverage",
+    "source": "manual_broad_pack",
+    "description": "Shows support representative revenue for one requested invoice year.",
+    "original_description": "Shows support representative revenue for one requested invoice year.",
+    "sql": "SELECT e.FirstName || ' ' || e.LastName AS support_rep_name,\n       :year AS year,\n       ROUND(SUM(i.Total), 2) AS total_revenue\nFROM Employee e\nJOIN Customer c ON e.EmployeeId = c.SupportRepId\nJOIN Invoice i ON c.CustomerId = i.CustomerId\nWHERE strftime('%Y', i.InvoiceDate) = :year\nGROUP BY e.EmployeeId\nORDER BY total_revenue DESC, support_rep_name ASC",
+    "expected_columns": [
+      "support_rep_name",
+      "year",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Employee",
+      "Customer",
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q051",
+    "category": "artists",
+    "intent": "revenue for specific artist",
+    "selected_candidate_id": "q051_manual",
+    "selected_strategy": "manual_context_follow_up",
+    "source": "manual_context_query_pack",
+    "description": "Returns total track sales revenue for one requested artist.",
+    "original_description": "Returns total track sales revenue for one requested artist.",
+    "sql": "SELECT ar.Name AS artist_name,\n       ROUND(COALESCE(SUM(il.UnitPrice * il.Quantity), 0), 2) AS total_revenue\nFROM Artist ar\nLEFT JOIN Album a ON ar.ArtistId = a.ArtistId\nLEFT JOIN Track t ON a.AlbumId = t.AlbumId\nLEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId\nWHERE ar.Name = :artist_name\nGROUP BY ar.ArtistId",
+    "expected_columns": [
+      "artist_name",
+      "total_revenue"
+    ],
+    "tables_used": [
+      "Artist",
+      "Album",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q052",
+    "category": "artists",
+    "intent": "revenue rank for specific artist",
+    "selected_candidate_id": "q052_manual",
+    "selected_strategy": "manual_comparative_follow_up",
+    "source": "manual_domain_guard_query_pack",
+    "description": "Returns one requested artist's revenue rank and whether that artist is the highest revenue artist.",
+    "original_description": "Returns one requested artist's revenue rank and whether that artist is the highest revenue artist.",
+    "sql": "WITH artist_revenue AS (\n  SELECT ar.ArtistId AS artist_id,\n         ar.Name AS artist_name,\n         ROUND(COALESCE(SUM(il.UnitPrice * il.Quantity), 0), 2) AS total_revenue\n  FROM Artist ar\n  LEFT JOIN Album a ON ar.ArtistId = a.ArtistId\n  LEFT JOIN Track t ON a.AlbumId = t.AlbumId\n  LEFT JOIN InvoiceLine il ON t.TrackId = il.TrackId\n  GROUP BY ar.ArtistId\n),\nranked_artists AS (\n  SELECT artist_id,\n         artist_name,\n         total_revenue,\n         RANK() OVER (ORDER BY total_revenue DESC, artist_name ASC) AS revenue_rank\n  FROM artist_revenue\n),\ntop_artist AS (\n  SELECT artist_name AS top_artist_name,\n         total_revenue AS top_artist_revenue\n  FROM ranked_artists\n  ORDER BY revenue_rank ASC, artist_name ASC\n  LIMIT 1\n)\nSELECT ra.artist_name,\n       ra.total_revenue,\n       ra.revenue_rank,\n       ta.top_artist_name,\n       ta.top_artist_revenue,\n       CASE WHEN ra.revenue_rank = 1 THEN 1 ELSE 0 END AS is_highest_revenue_artist\nFROM ranked_artists ra\nCROSS JOIN top_artist ta\nWHERE ra.artist_name = :artist_name",
+    "expected_columns": [
+      "artist_name",
+      "total_revenue",
+      "revenue_rank",
+      "top_artist_name",
+      "top_artist_revenue",
+      "is_highest_revenue_artist"
+    ],
+    "tables_used": [
+      "Artist",
+      "Album",
+      "Track",
+      "InvoiceLine"
+    ]
+  },
+  {
+    "query_id": "q053",
+    "category": "artists",
+    "intent": "list all artists",
+    "selected_candidate_id": "q053_manual",
+    "selected_strategy": "manual_logged_issue_coverage",
+    "source": "manual_logged_issue_query_pack",
+    "description": "Lists every artist in the Chinook database alphabetically.",
+    "original_description": "Lists every artist in the Chinook database alphabetically.",
+    "sql": "SELECT ArtistId AS artist_id,\n       Name AS artist_name\nFROM Artist\nORDER BY artist_name ASC",
+    "expected_columns": [
+      "artist_id",
+      "artist_name"
+    ],
+    "tables_used": [
+      "Artist"
+    ]
+  },
+  {
+    "query_id": "q054",
+    "category": "albums",
+    "intent": "list all albums with artists",
+    "selected_candidate_id": "q054_manual",
+    "selected_strategy": "manual_logged_issue_coverage",
+    "source": "manual_logged_issue_query_pack",
+    "description": "Lists every album with its artist in the Chinook database.",
+    "original_description": "Lists every album with its artist in the Chinook database.",
+    "sql": "SELECT a.AlbumId AS album_id,\n       a.Title AS album_title,\n       ar.Name AS artist_name\nFROM Album a\nJOIN Artist ar ON a.ArtistId = ar.ArtistId\nORDER BY artist_name ASC, album_title ASC",
+    "expected_columns": [
+      "album_id",
+      "album_title",
+      "artist_name"
+    ],
+    "tables_used": [
+      "Album",
+      "Artist"
+    ]
+  },
+  {
+    "query_id": "q055",
+    "category": "sales",
+    "intent": "highest revenue day",
+    "selected_candidate_id": "q055_manual",
+    "selected_strategy": "manual_logged_issue_coverage",
+    "source": "manual_logged_issue_query_pack",
+    "description": "Returns invoice dates ranked by daily revenue, with the highest sales day first.",
+    "original_description": "Returns invoice dates ranked by daily revenue, with the highest sales day first.",
+    "sql": "SELECT DATE(InvoiceDate) AS revenue_day,\n       ROUND(SUM(Total), 2) AS total_revenue,\n       COUNT(*) AS invoice_count\nFROM Invoice\nGROUP BY DATE(InvoiceDate)\nORDER BY total_revenue DESC, revenue_day ASC\nLIMIT 10",
+    "expected_columns": [
+      "revenue_day",
+      "total_revenue",
+      "invoice_count"
+    ],
+    "tables_used": [
+      "Invoice"
+    ]
+  },
+  {
+    "query_id": "q056",
+    "category": "products",
+    "intent": "most common file types by track count",
+    "selected_candidate_id": "q056_manual",
+    "selected_strategy": "manual_logged_issue_coverage",
+    "source": "manual_logged_issue_query_pack",
+    "description": "Ranks media or file types by the number of tracks and marks the most common type.",
+    "original_description": "Ranks media or file types by the number of tracks and marks the most common type.",
+    "sql": "WITH media_type_counts AS (\n  SELECT mt.MediaTypeId AS media_type_id,\n         mt.Name AS file_type_name,\n         COUNT(t.TrackId) AS track_count\n  FROM MediaType mt\n  LEFT JOIN Track t ON mt.MediaTypeId = t.MediaTypeId\n  GROUP BY mt.MediaTypeId, mt.Name\n),\nranked_media_types AS (\n  SELECT media_type_id,\n         file_type_name,\n         track_count,\n         RANK() OVER (ORDER BY track_count DESC, file_type_name ASC) AS track_count_rank\n  FROM media_type_counts\n)\nSELECT file_type_name,\n       track_count,\n       track_count_rank,\n       CASE WHEN track_count_rank = 1 THEN 1 ELSE 0 END AS is_most_common_file_type\nFROM ranked_media_types\nORDER BY track_count_rank ASC, file_type_name ASC",
+    "expected_columns": [
+      "file_type_name",
+      "track_count",
+      "track_count_rank",
+      "is_most_common_file_type"
+    ],
+    "tables_used": [
+      "MediaType",
+      "Track"
+    ]
+  }
+]
