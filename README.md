@@ -2,6 +2,10 @@
 
 Streamlit chatbot for the Agentic AI case study. The app lets business users ask questions in plain English, retrieves the closest vetted SQL query, executes it on Chinook SQLite, and uses Gemini to rewrite follow-ups, optionally review close matches in Thinking mode, and generate grounded natural-language answers.
 
+Live demo: https://chatbot.salmonjoy.com
+
+Example questions and results: [docs/example_questions_and_results.md](docs/example_questions_and_results.md)
+
 ## Why this design
 
 This project uses the strongest retrieval setup from the experiments done before submission:
