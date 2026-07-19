@@ -166,7 +166,8 @@ def render_pending_repository_options() -> None:
         st.warning("I found multiple plausible repository queries. Pick one to execute.")
         st.caption(pending["reason"])
         render_repository_option_controls(pending)
-        st.dataframe(pd.DataFrame(retrieval_rows_for_display(pending["matches"])), use_container_width=True)
+        with st.expander("Show retrieval details", expanded=False):
+            st.dataframe(pd.DataFrame(retrieval_rows_for_display(pending["matches"])), use_container_width=True)
 
 
 def execute_selected_repository_option(selected_query_id: str, force_execute: bool, thinking_mode: bool) -> None:
@@ -528,7 +529,8 @@ def handle_question(question: str, force_execute: bool, thinking_mode: bool) -> 
                     )
                 st.caption(decision_reason)
                 render_repository_option_controls(st.session_state.pending_repository_options)
-                st.dataframe(pd.DataFrame(retrieval_rows_for_display(matches[:3])), use_container_width=True)
+                with st.expander("Show retrieval details", expanded=False):
+                    st.dataframe(pd.DataFrame(retrieval_rows_for_display(matches[:3])), use_container_width=True)
                 st.session_state.messages.append(
                     {
                         "role": "assistant",
