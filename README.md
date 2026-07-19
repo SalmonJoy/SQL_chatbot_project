@@ -154,11 +154,13 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open:
+The default Compose file binds Streamlit to localhost on the host:
 
 ```text
-http://<VPS_IP>:8501
+http://127.0.0.1:8501
 ```
+
+On a VPS, keep this localhost-only binding and put Nginx, Caddy, or another reverse proxy in front of it. This avoids exposing Streamlit directly to the public internet.
 
 Useful commands:
 
@@ -171,7 +173,7 @@ git pull && docker compose up -d --build
 
 The first container start may download the MiniLM model. The Hugging Face cache is persisted in the `hf-cache` Docker volume, so future restarts do not need to download it again. Runtime logs are written to the mounted `./logs/` directory on the VPS.
 
-### Optional HTTPS with a domain
+### HTTPS with a domain
 
 Point your domain's DNS `A` record to the VPS IP, then run:
 
@@ -183,6 +185,14 @@ docker compose -f docker-compose.caddy.yml up -d --build
 ```
 
 For the Caddy setup, open ports `80` and `443` on the VPS firewall. Caddy will reverse proxy to Streamlit and manage HTTPS certificates automatically.
+
+If you use Nginx instead of Caddy, proxy the domain to:
+
+```text
+http://127.0.0.1:8501
+```
+
+Do not open port `8501` publicly unless you are doing a temporary test.
 
 ## Runtime workflow
 
