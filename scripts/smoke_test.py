@@ -46,6 +46,8 @@ SAMPLE_RETRIEVAL_CASES = [
     {"question": "monthly sales", "query_id": "q004"},
     {"question": "which month had highest sales", "query_id": "q030"},
     {"question": "sales in 2025", "query_id": "q028", "parameters": {"year": "2025"}},
+    {"question": "calculate total revenue in 2025", "query_id": "q028", "parameters": {"year": "2025"}},
+    {"question": "revenue 2025-12", "query_id": "q029", "parameters": {"month": "2025-12"}},
     {"question": "customers from Brazil", "query_id": "q040", "parameters": {"country": "Brazil"}},
     {"question": "top customer in USA", "query_id": "q041", "parameters": {"country": "USA"}},
     {"question": "sales by genre in USA", "query_id": "q036", "parameters": {"country": "USA"}},
@@ -75,6 +77,13 @@ SAMPLE_RETRIEVAL_CASES = [
     {"question": "all albums", "query_id": "q054"},
     {"question": "What artist has which albums", "query_id": "q054"},
     {"question": "How is my sales doing? going up or down?", "query_id": "q004"},
+    {"question": "who reports to whom", "query_id": "q023"},
+    {"question": "employee and manager names", "query_id": "q023"},
+    {"question": "media type counts", "query_id": "q016"},
+    {"question": "sales per month", "query_id": "q004"},
+    {"question": "top 10 countries by sales revenue", "query_id": "q002"},
+    {"question": "best selling tracks by dollar amount", "query_id": "q012"},
+    {"question": "top Rock tracks by quantity", "query_id": "q048", "parameters": {"genre_name": "Rock"}},
 ]
 
 
@@ -89,6 +98,21 @@ AMBIGUITY_GUARD_CASES = [
         "question": "tell me the person",
         "should_block": True,
         "reason_code": "vague_query",
+    },
+    {
+        "question": "top one",
+        "should_block": True,
+        "reason_code": "vague_query",
+    },
+    {
+        "question": "winner",
+        "should_block": True,
+        "reason_code": "vague_query",
+    },
+    {
+        "question": "who made the most money",
+        "should_block": True,
+        "reason_code": "ambiguous_entity_type",
     },
     {
         "question": "person whose tracks are sold most",
@@ -150,6 +174,13 @@ DOMAIN_GUARD_CASES = [
     {"question": "whern did I make most money?", "should_block": False},
     {"question": "who has not bought anything?", "should_block": False},
     {"question": "what all file types we have and which one is the most common?", "should_block": False},
+    {"question": "calculate total revenue in 2025", "should_block": False},
+    {"question": "revenue 2025-12", "should_block": False},
+    {"question": "who reports to whom", "should_block": False},
+    {"question": "employee and manager names", "should_block": False},
+    {"question": "How do you make a Caesar salad?", "should_block": True, "reason_code": "out_of_domain"},
+    {"question": "How many countries are in the European Union?", "should_block": True},
+    {"question": "Get the list of customers and tell me how to make a perfect omelet.", "should_block": True},
     {
         "question": "What do the artists have for lunch?",
         "should_block": True,
@@ -166,6 +197,21 @@ MULTI_INTENT_GUARD_CASES = [
     },
     {
         "question": "Artist who sold most album and customer who bought most albums",
+        "should_block": True,
+        "reason_code": "multiple_database_intents",
+    },
+    {
+        "question": "top customer plus top artist",
+        "should_block": True,
+        "reason_code": "multiple_database_intents",
+    },
+    {
+        "question": "media type count and employee revenue",
+        "should_block": True,
+        "reason_code": "multiple_database_intents",
+    },
+    {
+        "question": "top albums plus city revenue",
         "should_block": True,
         "reason_code": "multiple_database_intents",
     },

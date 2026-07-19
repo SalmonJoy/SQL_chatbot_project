@@ -1,6 +1,6 @@
 # Natural Language to SQL Insight Chatbot
 
-Streamlit chatbot for the Agentic AI case study. The app lets business users ask questions in plain English, retrieves the closest vetted SQL query, executes it on Chinook SQLite, and uses Gemini to rewrite follow-ups and generate grounded natural-language answers.
+Streamlit chatbot for the Agentic AI case study. The app lets business users ask questions in plain English, retrieves the closest vetted SQL query, executes it on Chinook SQLite, and uses Gemini to rewrite follow-ups, optionally review close matches in Thinking mode, and generate grounded natural-language answers.
 
 ## Why this design
 
@@ -20,7 +20,7 @@ Final runtime choice:
 - Fusion: `0.70 * dense_score + 0.30 * lexical_score`
 - SQL: fixed vetted repository, no free-form SQL generation
 - Specific filters: safe vetted SQL templates with validated parameters for year, month, country, genre, and artist
-- LLM: Gemini for follow-up rewriting and final answer wording only
+- LLM: Gemini for follow-up rewriting, close-match decision review, and final answer wording only
 - Domain guard: calculator/math, non-Chinook, and mixed in-domain/out-of-domain questions are blocked before retrieval/SQL
 - Runtime control: no LLM-generated SQL and no separate query-generation service
 
@@ -79,7 +79,7 @@ cp .env.example .env
 # optionally edit .env and set GEMINI_API_KEY
 ```
 
-If `GEMINI_API_KEY` is not set, the app still works with deterministic retrieval and fallback answers. Follow-up rewriting is skipped.
+If `GEMINI_API_KEY` is not set, the app still works with deterministic retrieval and fallback answers. Follow-up rewriting, Thinking mode review, and Gemini answer wording are skipped.
 
 ## Build or refresh the MiniLM index
 
@@ -149,7 +149,7 @@ git clone https://github.com/SalmonJoy/SQL_chatbot_project.git
 cd SQL_chatbot_project
 
 cp .env.example .env
-# edit .env and set GEMINI_API_KEY if you want Gemini rewriting and answer wording
+# edit .env and set GEMINI_API_KEY if you want Gemini rewriting, Thinking mode review, and answer wording
 
 docker compose up -d --build
 ```
@@ -205,14 +205,16 @@ Do not open port `8501` publicly unless you are doing a temporary test.
 7. The app combines scores using fixed `0.70/0.30` normalized score fusion.
 8. Parameterized templates are penalized unless the user question includes the required value type.
 9. If the selected query needs a parameter, the app resolves it locally against known SQLite values.
-10. If the match is confident and all required parameters are valid, the selected vetted SQL query is executed against SQLite.
-11. Gemini receives only the user question, selected intent, executed SQL, SQL parameters, and SQL result rows to produce a grounded answer.
-12. The app stores compact context from the successful turn for one-turn follow-up rewriting.
+10. If Thinking mode is enabled in the sidebar, Gemini may review close top-k matches and choose one repository query, ask clarification, or block the request.
+11. If the match is confident and all required parameters are valid, the selected vetted SQL query is executed against SQLite.
+12. Gemini receives only the user question, selected intent, executed SQL, SQL parameters, and SQL result rows to produce a grounded answer.
+13. The app stores compact context from the successful turn for one-turn follow-up rewriting.
 
 ## Safety controls
 
 - The app never asks Gemini to generate SQL.
 - Gemini follow-up rewriting outputs only a standalone natural-language question.
+- Gemini decision review can only choose from top retrieved repository candidates, ask clarification, or block the request.
 - Only repository SQL can be executed.
 - Obvious out-of-domain questions, including calculator/math prompts like `what is 3x4?`, are blocked before retrieval and do not show repository buttons.
 - Mixed prompts that combine a Chinook request with unrelated content are blocked completely; the app asks for one Chinook-only database question.
@@ -244,6 +246,9 @@ LOG_FILE=chatbot_events.jsonl
 LOG_SQL_RESULT_ROWS=all
 MAX_RESULT_ROWS_FOR_LLM=200
 ENABLE_CONTEXT_REWRITE=true
+ENABLE_GEMINI_DECISION_REVIEW=true  # default sidebar state for Thinking mode
+GEMINI_DECISION_REVIEW_TOP_K=5
+GEMINI_DECISION_REVIEW_MARGIN_THRESHOLD=0.08
 MAX_CONTEXT_RESULT_ROWS=20
 ```
 

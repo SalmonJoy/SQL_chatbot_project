@@ -30,6 +30,9 @@ class AppConfig:
     max_result_rows_for_llm: int = int(os.getenv("MAX_RESULT_ROWS_FOR_LLM", "200"))
     max_result_rows_display: int = int(os.getenv("MAX_RESULT_ROWS_DISPLAY", "100"))
     enable_context_rewrite: bool = os.getenv("ENABLE_CONTEXT_REWRITE", "true").lower() in {"1", "true", "yes", "on"}
+    enable_gemini_decision_review: bool = os.getenv("ENABLE_GEMINI_DECISION_REVIEW", "true").lower() in {"1", "true", "yes", "on"}
+    gemini_decision_review_top_k: int = int(os.getenv("GEMINI_DECISION_REVIEW_TOP_K", "5"))
+    gemini_decision_review_margin_threshold: float = float(os.getenv("GEMINI_DECISION_REVIEW_MARGIN_THRESHOLD", "0.08"))
     max_context_result_rows: int = int(os.getenv("MAX_CONTEXT_RESULT_ROWS", "20"))
     gemini_model: str = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     log_dir: Path = PROJECT_ROOT / os.getenv("LOG_DIR", "logs")

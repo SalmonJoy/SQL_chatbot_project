@@ -14,6 +14,7 @@ UNRESOLVED_PRONOUNS = {
     "his",
     "she",
     "their",
+    "them",
 }
 
 
@@ -33,6 +34,30 @@ EXPLICIT_ENTITY_TOKENS = {
     "support",
     "track",
     "year",
+    "amount",
+    "country",
+    "total",
+    "value",
+}
+
+
+SAFE_POSSESSIVE_CONTEXT_TOKENS = {
+    "album",
+    "artist",
+    "average",
+    "billing",
+    "country",
+    "customer",
+    "employee",
+    "genre",
+    "invoice",
+    "media",
+    "revenue",
+    "sale",
+    "sales",
+    "track",
+    "total",
+    "value",
 }
 
 
@@ -66,7 +91,15 @@ class AmbiguityGuardResult:
 def has_unresolved_pronoun(question: str) -> bool:
     normalized = normalize_phrase_text(question)
     tokens = set(tokenize(question))
-    return bool(tokens.intersection(UNRESOLVED_PRONOUNS)) or "that person" in normalized
+    if "that person" in normalized:
+        return True
+    if tokens.intersection({"he", "him", "his", "she", "her"}):
+        return True
+    if tokens.intersection({"their", "them"}) and not tokens.intersection(SAFE_POSSESSIVE_CONTEXT_TOKENS):
+        return True
+    if "what about them" in normalized or "total for them" in normalized:
+        return True
+    return False
 
 
 def is_person_tracks_question(question: str) -> bool:
@@ -86,6 +119,9 @@ def is_ambiguous_selling_question(question: str) -> bool:
         bool(re.search(r"\bwho\s+sold(?:\s+the)?\s+most\b", normalized))
         or "best seller" in normalized
         or "best selling" in normalized
+        or bool(re.search(r"\bwho\s+(?:made|make)\s+(?:the\s+)?most\s+money\b", normalized))
+        or bool(re.search(r"\bwho\s+has\s+(?:the\s+)?highest\s+total\b", normalized))
+        or bool(re.search(r"\bwho\s+is\s+(?:the\s+)?(?:top\s+earner|most\s+popular|most\s+active)\b", normalized))
     )
     return selling_phrase and not explicit_entity_tokens
 
@@ -96,9 +132,36 @@ def is_too_vague(question: str) -> bool:
 
     if normalized in {"total", "person", "who", "tell me person", "tell me the person"}:
         return True
+    if normalized in {
+        "top one",
+        "show top one",
+        "show me top one",
+        "best ones",
+        "list best ones",
+        "list the best ones",
+        "winner",
+        "show winner",
+        "show the winner",
+        "leader",
+        "who leader",
+        "who is leader",
+        "who is the leader",
+        "champion",
+        "who is champion",
+        "who is the champion",
+        "number one",
+        "who is number one",
+        "who is the number one",
+        "biggest one",
+        "give me biggest one",
+        "give me the biggest one",
+    }:
+        return True
     if tokens == {"total"} or tokens == {"person"}:
         return True
     if len(tokens) <= 2 and tokens.intersection({"person", "who"}):
+        return True
+    if "person" in tokens and tokens.intersection({"highest", "count", "total", "top", "most"}):
         return True
     return False
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import os
 import time
+from dataclasses import replace
 from pathlib import Path
 
 import pandas as pd
@@ -25,6 +26,7 @@ from src.data_loader import (  # noqa: E402
     load_user_query_variations,
     merge_repository_with_optimized_descriptions,
 )
+from src.decision_reviewer import review_decision  # noqa: E402
 from src.domain_guard import evaluate_domain  # noqa: E402
 from src.formatting import retrieval_rows_for_display, truncate_dataframe  # noqa: E402
 from src.multi_intent_guard import evaluate_multi_intent  # noqa: E402
@@ -69,17 +71,33 @@ def initialize_state() -> None:
         st.session_state.conversation_context = None
 
 
-def render_sidebar() -> bool:
+def render_sidebar() -> tuple[bool, bool]:
     st.sidebar.title("Retrieval setup")
     st.sidebar.write("**Embedding:** MiniLM")
     st.sidebar.write("**Retrieval:** Hybrid dense + BM25")
     st.sidebar.write(f"**Weights:** dense `{CONFIG.dense_weight:.2f}`, lexical `{CONFIG.lexical_weight:.2f}`")
     st.sidebar.write("**SQL:** Fixed vetted repository")
     st.sidebar.divider()
+    gemini_api_key_present = bool(os.getenv("GEMINI_API_KEY"))
     st.sidebar.caption(
-        "Gemini can rewrite follow-ups into standalone questions and phrase final answers. "
-        "It never generates SQL."
+        "Gemini can rewrite follow-ups, review close retrieval decisions in Thinking mode, "
+        "and phrase final answers. It never generates SQL."
     )
+    thinking_mode = st.sidebar.checkbox(
+        "Thinking mode",
+        value=CONFIG.enable_gemini_decision_review and gemini_api_key_present,
+        disabled=not gemini_api_key_present,
+        help=(
+            "When enabled, the app may use one extra Gemini call for uncertain or conflict-prone matches. "
+            "Gemini can only choose from the top vetted repository queries, ask clarification, or block."
+        ),
+    )
+    if not gemini_api_key_present:
+        st.sidebar.caption("Set `GEMINI_API_KEY` to enable Thinking mode and Gemini answer wording.")
+    elif thinking_mode:
+        st.sidebar.caption("Thinking mode is on for close-match review.")
+    else:
+        st.sidebar.caption("Thinking mode is off; deterministic retrieval/guards decide execution.")
     force_execute = st.sidebar.checkbox(
         "Always execute best match",
         value=False,
@@ -98,13 +116,30 @@ def render_sidebar() -> bool:
             ]
         )
     )
-    return force_execute
+    return force_execute, thinking_mode
 
 
-def render_retrieval_details(matches: list[dict], selected_match: dict | None = None) -> None:
+def render_retrieval_details(
+    matches: list[dict],
+    selected_match: dict | None = None,
+    decision_review: dict | None = None,
+) -> None:
     selected_match = selected_match or matches[0]
     with st.expander("Retrieval details", expanded=False):
         st.dataframe(pd.DataFrame(retrieval_rows_for_display(matches)), use_container_width=True)
+        if decision_review:
+            st.markdown("Decision review")
+            st.json(
+                {
+                    "status": decision_review.get("status"),
+                    "source": decision_review.get("source"),
+                    "used_review": decision_review.get("used_review"),
+                    "action": decision_review.get("action"),
+                    "query_id": decision_review.get("query_id"),
+                    "confidence": decision_review.get("confidence"),
+                    "reason": decision_review.get("reason"),
+                }
+            )
         st.code(selected_match["sql"], language="sql")
 
 
@@ -134,7 +169,7 @@ def render_pending_repository_options() -> None:
         st.dataframe(pd.DataFrame(retrieval_rows_for_display(pending["matches"])), use_container_width=True)
 
 
-def execute_selected_repository_option(selected_query_id: str, force_execute: bool) -> None:
+def execute_selected_repository_option(selected_query_id: str, force_execute: bool, thinking_mode: bool) -> None:
     pending = st.session_state.get("pending_repository_options")
     if not pending:
         st.session_state.selected_repository_option = None
@@ -151,7 +186,8 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
     request_id = new_request_id()
     question = pending["question"]
     effective_question = pending.get("effective_question", question)
-    log_event = base_event(request_id, question, force_execute, CONFIG)
+    request_config = replace(CONFIG, enable_gemini_decision_review=thinking_mode)
+    log_event = base_event(request_id, question, force_execute, request_config)
     log_event["event_type"] = "chatbot_repository_selection"
     log_event["selected_from_request_id"] = pending["request_id"]
     log_event["context_rewrite"] = pending.get("context_rewrite")
@@ -173,6 +209,7 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
         "parameter_resolution": parameter_resolution.to_log(),
         "ambiguity_guard": ambiguity_guard.to_log(),
         "multi_intent_guard": pending.get("multi_intent_guard"),
+        "thinking_mode_enabled": thinking_mode,
         "decision": {
             "should_execute": parameter_resolution.can_execute,
             "retriever_should_execute": False,
@@ -287,9 +324,10 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
             st.session_state.selected_repository_option = None
 
 
-def handle_question(question: str, force_execute: bool) -> None:
+def handle_question(question: str, force_execute: bool, thinking_mode: bool) -> None:
     request_id = new_request_id()
-    log_event = base_event(request_id, question, force_execute, CONFIG)
+    request_config = replace(CONFIG, enable_gemini_decision_review=thinking_mode)
+    log_event = base_event(request_id, question, force_execute, request_config)
     started_at = time.perf_counter()
     st.session_state.pending_repository_options = None
     st.session_state.selected_repository_option = None
@@ -321,6 +359,7 @@ def handle_question(question: str, force_execute: bool) -> None:
                     "elapsed_ms": retrieval_elapsed_ms,
                     "effective_question": effective_question,
                     "domain_guard": domain_guard.to_log(),
+                    "thinking_mode_enabled": thinking_mode,
                     "decision": {
                         "should_execute": False,
                         "retriever_should_execute": False,
@@ -359,9 +398,45 @@ def handle_question(question: str, force_execute: bool) -> None:
                 and not ambiguity_guard.should_block
                 and not multi_intent_guard.should_block
             )
+            decision_review = review_decision(
+                effective_question,
+                matches,
+                domain_guard,
+                ambiguity_guard,
+                multi_intent_guard,
+                parameter_resolution,
+                should_execute,
+                request_config,
+            )
+            if decision_review.usable:
+                if decision_review.action == "execute_repository_query" and decision_review.query_id:
+                    reviewed_match = next(
+                        (match for match in matches if match["query_id"] == decision_review.query_id),
+                        None,
+                    )
+                    if reviewed_match is not None:
+                        top = reviewed_match
+                        parameter_resolution = parameter_resolver.resolve(top, effective_question)
+                        ambiguity_guard = evaluate_ambiguity(effective_question, top, matches)
+                        should_execute = parameter_resolution.can_execute
+                elif decision_review.action in {"ask_clarification", "block_multi_intent"}:
+                    should_execute = False
+                elif decision_review.action == "block_domain":
+                    domain_guard = type(domain_guard)(
+                        True,
+                        "decision_review_block_domain",
+                        decision_review.reason or "Gemini decision review classified this as outside the database scope.",
+                        matched_domain_terms=domain_guard.matched_domain_terms,
+                        offending_clauses=domain_guard.offending_clauses,
+                    )
+                    should_execute = False
 
             if not parameter_resolution.can_execute:
                 decision_reason = " ".join(parameter_resolution.messages)
+            elif decision_review.usable and decision_review.action in {"ask_clarification", "block_domain", "block_multi_intent"}:
+                decision_reason = decision_review.reason
+            elif should_execute and decision_review.usable and decision_review.action == "execute_repository_query":
+                decision_reason = decision_review.reason or "Gemini decision review selected a vetted repository query."
             elif ambiguity_guard.should_block:
                 decision_reason = ambiguity_guard.message
             elif multi_intent_guard.should_block:
@@ -379,6 +454,8 @@ def handle_question(question: str, force_execute: bool) -> None:
                 "ambiguity_guard": ambiguity_guard.to_log(),
                 "multi_intent_guard": multi_intent_guard.to_log(),
                 "domain_guard": domain_guard.to_log(),
+                "decision_review": decision_review.to_log(),
+                "thinking_mode_enabled": thinking_mode,
                 "decision": {
                     "should_execute": should_execute,
                     "retriever_should_execute": decision.should_execute,
@@ -395,6 +472,11 @@ def handle_question(question: str, force_execute: bool) -> None:
                 st.caption(f"Interpreted follow-up as: `{effective_question}`")
             if parameter_resolution.parameters:
                 st.caption(f"Resolved parameters: `{parameter_resolution.parameters}`")
+            if thinking_mode and decision_review.status != "skipped":
+                st.caption(
+                    "Thinking mode review: "
+                    f"{decision_review.action}, confidence `{decision_review.confidence}`."
+                )
 
             if not should_execute:
                 if not parameter_resolution.can_execute:
@@ -497,7 +579,7 @@ def handle_question(question: str, force_execute: bool) -> None:
             if len(display_df) < len(result_df):
                 st.caption(f"Showing first {len(display_df)} of {len(result_df)} rows.")
 
-            render_retrieval_details(matches)
+            render_retrieval_details(matches, top, decision_review.to_log())
             st.session_state.messages.append({"role": "assistant", "content": answer})
             st.session_state.conversation_context = build_context_snapshot(
                 original_question=question,
@@ -527,12 +609,12 @@ def handle_question(question: str, force_execute: bool) -> None:
 def main() -> None:
     st.set_page_config(page_title="NL-to-SQL Insight Chatbot", page_icon="🎧", layout="wide")
     initialize_state()
-    force_execute = render_sidebar()
+    force_execute, thinking_mode = render_sidebar()
 
     st.title("Natural Language to SQL Insight Chatbot")
     st.caption(
         "Ask a business question. The app retrieves a vetted SQL query, executes it on Chinook SQLite, "
-        "and uses Gemini only for follow-up rewriting and grounded answer wording."
+        "and uses Gemini only for follow-up rewriting, optional Thinking mode review, and grounded answer wording."
     )
 
     try:
@@ -551,13 +633,13 @@ def main() -> None:
 
     selected_query_id = st.session_state.get("selected_repository_option")
     if selected_query_id:
-        execute_selected_repository_option(selected_query_id, force_execute)
+        execute_selected_repository_option(selected_query_id, force_execute, thinking_mode)
     else:
         render_pending_repository_options()
 
     question = st.chat_input("Ask about sales, customers, products, artists, support reps, or playlists")
     if question:
-        handle_question(question, force_execute)
+        handle_question(question, force_execute, thinking_mode)
 
 
 if __name__ == "__main__":

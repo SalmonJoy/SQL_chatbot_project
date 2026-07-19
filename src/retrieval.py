@@ -78,6 +78,7 @@ TOKEN_REWRITES = {
     "bought": "purchase",
     "purchas": "purchase",
     "custmer": "customer",
+    "pric": "price",
     "trak": "track",
     "traks": "track",
     "qty": "quantity",
@@ -347,12 +348,41 @@ def retrieval_routing_adjustment(question: str, row: dict[str, Any]) -> float:
 
     has_sales_or_money = has_any_token(tokens, {"revenue", "sale", "money", "earn", "make"})
     has_geo = has_any_token(tokens, {"country", "city", "billing", "usa", "brazil", "canada", "france", "germany"})
+    has_customer = has_any_token(tokens, {"customer", "buyer", "spender"})
+    has_count = has_any_token(tokens, {"count", "how", "many", "number", "total"})
+    has_invoice = has_any_token(tokens, {"invoice"})
+    has_track = has_any_token(tokens, {"track", "song"})
+    has_album = has_any_token(tokens, {"album"})
+    has_artist = has_any_token(tokens, {"artist", "band"})
+    has_quantity = has_any_token(tokens, {"quantity", "qty", "unit", "copy", "copies", "times", "volume"})
+    has_money_metric = has_any_token(tokens, {"revenue", "money", "dollar", "amount", "earning", "earn", "price"})
+    has_latest = has_any_token(tokens, {"last", "latest", "recent", "current"})
+    has_direct_month_parameter = bool(re.search(r"\b(?:19|20)\d{2}[-/](?:0?[1-9]|1[0-2])\b", question))
+    has_year_parameter = bool(re.search(r"\b(?:19|20)\d{2}\b", question))
+    has_monthly_all = (
+        has_any_token(tokens, {"month", "monthly"})
+        and not has_latest
+        and (
+            has_any_token(tokens, {"per", "each", "every", "trend"})
+            or has_any_phrase(normalized, {"per month", "each month", "every month", "by month", "sales per month"})
+        )
+    )
 
-    if has_any_token(tokens, {"file", "format", "type"}) and has_any_phrase(
+    if has_any_token(tokens, {"media", "file", "format", "type"}) and has_any_phrase(
         normalized,
         {"file type", "file format", "media type", "media format"},
     ):
-        if query_id == "q056":
+        asks_most_common_type = has_any_token(tokens, {"most", "common", "largest", "top", "highest"})
+        asks_simple_type_count = (
+            has_track
+            or has_count
+            or has_any_phrase(normalized, {"tracks by media type", "media type count", "media type counts"})
+        ) and not asks_most_common_type
+        if query_id == "q016" and asks_simple_type_count:
+            adjustment += 0.45
+        elif query_id == "q056" and asks_simple_type_count:
+            adjustment -= 0.25
+        elif query_id == "q056":
             adjustment += 0.35
         elif query_id == "q016":
             adjustment += 0.20
@@ -361,24 +391,54 @@ def retrieval_routing_adjustment(question: str, row: dict[str, Any]) -> float:
         elif query_id == "q046" and not has_sales_or_money:
             adjustment -= 0.20
 
-    if has_any_token(tokens, {"artist"}) and (
+    if has_any_token(tokens, {"media", "file", "format", "type"}) and has_money_metric:
+        if query_id == "q046":
+            adjustment += 0.40
+        elif query_id in {"q016", "q056"}:
+            adjustment -= 0.20
+
+    if has_artist and has_any_token(tokens, {"quantity", "qty", "sold", "sale"}) and not has_money_metric:
+        if query_id == "q045":
+            adjustment += 0.35
+        elif query_id == "q053":
+            adjustment -= 0.25
+
+    if has_artist and (
         has_any_token(tokens, {"all", "every", "list", "name"})
         or has_any_phrase(normalized, {"all artist", "artist list", "artist names", "show me artists"})
-    ):
+    ) and not has_any_token(tokens, {"quantity", "qty", "sold", "sale", "album", "revenue", "money"}):
         if query_id == "q053":
             adjustment += 0.35
         elif query_id in {"q018", "q020", "q045", "q051", "q052"}:
             adjustment -= 0.15
 
-    if has_any_token(tokens, {"album"}) and (
+    if has_album and (
         has_any_token(tokens, {"all", "every", "list", "name"})
         or has_any_phrase(normalized, {"all album", "album list", "which albums", "artist has which albums", "what albums"})
         or (has_any_token(tokens, {"artist"}) and has_any_phrase(normalized, {"artist has", "artist album"}))
-    ):
+    ) and not has_any_token(tokens, {"most", "highest", "revenue", "money", "sales", "sold", "quantity", "copy", "copies", "track", "song"}):
         if query_id == "q054":
             adjustment += 0.35
         elif query_id in {"q018", "q019", "q043", "q044"}:
             adjustment -= 0.15
+
+    if has_album and has_any_token(tokens, {"most", "highest", "top"}) and has_any_token(tokens, {"track", "song"}):
+        if query_id == "q019":
+            adjustment += 0.35
+        elif query_id == "q054":
+            adjustment -= 0.20
+
+    if has_album and has_money_metric:
+        if query_id == "q043":
+            adjustment += 0.40
+        elif query_id in {"q020", "q054"}:
+            adjustment -= 0.25
+
+    if has_album and has_any_token(tokens, {"quantity", "qty", "sold", "copy", "copies", "volume"}):
+        if query_id == "q044":
+            adjustment += 0.40
+        elif query_id in {"q011", "q054"}:
+            adjustment -= 0.25
 
     if (
         has_sales_or_money
@@ -418,6 +478,164 @@ def retrieval_routing_adjustment(question: str, row: dict[str, Any]) -> float:
             adjustment += 0.35
         elif query_id in {"q002", "q035", "q036", "q037"} and not has_geo:
             adjustment -= 0.20
+
+    if has_monthly_all:
+        if has_geo and query_id == "q037":
+            adjustment += 0.55
+        elif has_geo and query_id == "q004":
+            adjustment -= 0.30
+        elif query_id == "q004":
+            adjustment += 0.45
+        elif query_id in {"q026", "q029"}:
+            adjustment -= 0.30
+
+    if has_any_token(tokens, {"month", "monthly"}) and has_geo:
+        if query_id == "q037":
+            adjustment += 0.45
+        elif query_id in {"q004", "q026"}:
+            adjustment -= 0.20
+
+    if has_latest and has_any_token(tokens, {"month", "monthly"}):
+        if query_id == "q026":
+            adjustment += 0.35
+        elif query_id == "q004":
+            adjustment -= 0.20
+
+    if has_any_token(tokens, {"employee", "rep", "representative", "support"}) and has_latest and has_any_token(tokens, {"month", "monthly"}):
+        if query_id == "q049":
+            adjustment += 0.55
+        elif query_id == "q026":
+            adjustment -= 0.25
+
+    if has_any_token(tokens, {"employee", "rep", "representative", "support"}) and has_year_parameter and has_sales_or_money:
+        if query_id == "q050":
+            adjustment += 0.45
+        elif query_id in {"q028", "q022"}:
+            adjustment -= 0.15
+
+    if has_direct_month_parameter and has_sales_or_money:
+        if query_id == "q029":
+            adjustment += 0.45
+        elif query_id in {"q004", "q026", "q028"}:
+            adjustment -= 0.20
+
+    if has_year_parameter and not has_direct_month_parameter and has_sales_or_money:
+        if query_id == "q028":
+            adjustment += 0.35
+        elif query_id in {"q003", "q027", "q029"}:
+            adjustment -= 0.15
+
+    if has_any_token(tokens, {"year", "yearly", "max", "maximum"}) and not question_has_parameter_hint(question, "year"):
+        if has_latest or has_any_token(tokens, {"max", "maximum"}):
+            if query_id == "q027":
+                adjustment += 0.45
+            elif query_id == "q003":
+                adjustment -= 0.25
+
+    if has_any_token(tokens, {"year", "yearly"}) and not has_latest and not question_has_parameter_hint(question, "year") and not has_any_token(tokens, {"max", "maximum"}):
+        if query_id == "q003":
+            adjustment += 0.35
+        elif query_id == "q027":
+            adjustment -= 0.25
+
+    if has_any_token(tokens, {"average", "avg", "mean"}) and has_invoice:
+        if has_geo:
+            if query_id == "q034":
+                adjustment += 0.50
+            elif query_id in {"q005", "q006"}:
+                adjustment -= 0.20
+        else:
+            if query_id == "q005":
+                adjustment += 0.35
+            elif query_id == "q034":
+                adjustment -= 0.25
+
+    if has_geo and has_invoice and (has_count or has_any_token(tokens, {"top", "most", "highest"})):
+        if query_id == "q006":
+            adjustment += 0.40
+        elif query_id in {"q002", "q010", "q034", "q037"}:
+            adjustment -= 0.20
+
+    if has_geo and has_sales_or_money and not has_customer and not has_invoice and not has_any_token(tokens, {"month", "monthly", "city"}):
+        if query_id == "q002":
+            adjustment += 0.40
+        elif query_id in {"q006", "q010", "q034", "q037"}:
+            adjustment -= 0.20
+
+    if has_geo and has_customer:
+        if has_any_token(tokens, {"top", "biggest", "spender", "spend", "revenue", "total"}):
+            if query_id == "q041":
+                adjustment += 0.45
+            elif query_id in {"q007", "q009", "q010"}:
+                adjustment -= 0.20
+        elif has_count:
+            if query_id == "q039":
+                adjustment += 0.35
+            elif query_id == "q008":
+                adjustment -= 0.10
+        elif has_any_token(tokens, {"list", "first", "name", "sorted"}):
+            if query_id == "q008":
+                adjustment += 0.35
+            elif query_id == "q039":
+                adjustment -= 0.20
+
+    if has_customer and has_count and not has_geo:
+        if has_any_phrase(normalized, {"how many customers", "customer total", "total customers"}):
+            if query_id == "q038":
+                adjustment += 0.35
+            elif query_id == "q039":
+                adjustment -= 0.20
+
+    if has_track and has_any_token(tokens, {"genre", "rock", "metal", "jazz", "latin", "pop", "classical", "blues"}):
+        if query_id == "q048" and has_any_token(tokens, {"top", "quantity", "qty", "sold", "sale"}):
+            adjustment += 0.45
+        elif query_id == "q011":
+            adjustment -= 0.25
+
+    if has_track and has_money_metric:
+        if has_any_token(tokens, {"expensive", "highest", "price"}) and not has_any_token(tokens, {"sold", "sale", "quantity", "qty"}):
+            if query_id == "q014":
+                adjustment += 0.50
+            elif query_id in {"q011", "q012"}:
+                adjustment -= 0.25
+        elif query_id == "q012":
+            adjustment += 0.45
+        elif query_id == "q011":
+            adjustment -= 0.25
+
+    if has_any_token(tokens, {"genre"}) and has_geo and has_sales_or_money:
+        if query_id == "q036":
+            adjustment += 0.50
+        elif query_id in {"q002", "q017", "q037"}:
+            adjustment -= 0.20
+
+    if has_track and has_quantity and not has_money_metric and not has_any_token(tokens, {"genre", "rock", "metal", "jazz", "latin", "pop", "classical", "blues"}):
+        if query_id == "q011":
+            adjustment += 0.35
+
+    if has_any_token(tokens, {"genre"}) and has_track and has_count and not has_any_token(tokens, {"playlist"}):
+        if query_id == "q015":
+            adjustment += 0.40
+        elif query_id == "q025":
+            adjustment -= 0.25
+
+    if has_any_token(tokens, {"playlist"}) and has_any_token(tokens, {"genre"}):
+        if query_id == "q025":
+            adjustment += 0.35
+        elif query_id == "q015":
+            adjustment -= 0.20
+
+    if has_any_token(tokens, {"employee", "rep", "representative", "support"}) and has_customer and has_count:
+        if query_id == "q021":
+            adjustment += 0.40
+        elif query_id == "q038":
+            adjustment -= 0.25
+
+    if has_track and has_any_phrase(normalized, {"no sales", "never sold", "not sold", "without sales"}):
+        if query_id == "q047":
+            adjustment += 0.45
+        elif query_id == "q054":
+            adjustment -= 0.25
 
     return adjustment
 

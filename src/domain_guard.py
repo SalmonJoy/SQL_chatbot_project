@@ -26,6 +26,10 @@ DOMAIN_TERMS = {
     "customers",
     "employee",
     "employees",
+    "hierarchy",
+    "manager",
+    "managers",
+    "management",
     "earn",
     "earned",
     "earning",
@@ -40,9 +44,6 @@ DOMAIN_TERMS = {
     "genres",
     "invoice",
     "invoices",
-    "make",
-    "made",
-    "making",
     "media",
     "money",
     "month",
@@ -61,6 +62,9 @@ DOMAIN_TERMS = {
     "reps",
     "representative",
     "representatives",
+    "report",
+    "reporting",
+    "reports",
     "revenue",
     "sale",
     "sales",
@@ -72,6 +76,7 @@ DOMAIN_TERMS = {
     "songs",
     "spend",
     "spending",
+    "staff",
     "store",
     "support",
     "track",
@@ -96,18 +101,26 @@ COMPARATIVE_TERMS = {
 }
 
 FOLLOW_UP_OR_AMBIGUITY_TERMS = {
+    "active",
+    "biggest",
+    "champion",
     "he",
     "her",
     "him",
     "his",
+    "leader",
+    "one",
     "person",
     "people",
+    "popular",
     "she",
+    "sum",
     "their",
     "them",
     "these",
     "this",
     "those",
+    "winner",
 }
 
 MATH_WORDS = {
@@ -138,6 +151,41 @@ UNRELATED_ATTRIBUTE_TERMS = {
     "lunch",
     "president",
     "whale",
+    "caesar",
+    "cook",
+    "cooking",
+    "dish",
+    "european",
+    "eu",
+    "omelet",
+    "omelette",
+    "recipe",
+    "salad",
+    "union",
+}
+
+BUSINESS_MATH_CONTEXT_TERMS = {
+    "album",
+    "artist",
+    "billing",
+    "city",
+    "country",
+    "customer",
+    "employee",
+    "genre",
+    "invoice",
+    "media",
+    "money",
+    "month",
+    "playlist",
+    "purchase",
+    "quantity",
+    "revenue",
+    "sale",
+    "sales",
+    "spend",
+    "track",
+    "year",
 }
 
 
@@ -163,8 +211,11 @@ def has_math_shape(question: str) -> bool:
     normalized = normalize_phrase_text(question)
     raw_lower = question.lower()
     tokens = set(tokenize(question))
+    if tokens.intersection(BUSINESS_MATH_CONTEXT_TERMS):
+        return False
+    raw_without_dates = re.sub(r"\b(?:19|20)\d{2}[-/](?:0?[1-9]|1[0-2])\b", "", raw_lower)
     has_operator_expression = bool(
-        re.search(r"\b\d+(?:\.\d+)?\s*(?:x|\*|\+|-|/)\s*\d+(?:\.\d+)?\b", raw_lower)
+        re.search(r"\b\d+(?:\.\d+)?\s*(?:x|\*|\+|-|/)\s*\d+(?:\.\d+)?\b", raw_without_dates)
     )
     has_math_word_with_number = bool(tokens.intersection(MATH_WORDS)) and bool(
         re.search(r"\b\d+(?:\.\d+)?\b", normalized)
@@ -186,6 +237,31 @@ def has_database_domain_signal(question: str) -> bool:
     if matched_database_domain_terms(question):
         return True
     if tokens.intersection(FOLLOW_UP_OR_AMBIGUITY_TERMS) and tokens.intersection(COMPARATIVE_TERMS):
+        return True
+    if (
+        tokens.intersection(FOLLOW_UP_OR_AMBIGUITY_TERMS)
+        and tokens.intersection({"total", "sum", "money", "revenue", "earner", "count"})
+    ):
+        return True
+    if "how much did we make" in normalized or "how much we make" in normalized:
+        return True
+    if "make" in tokens and tokens.intersection({"total", "much"}):
+        return True
+    if normalized in {
+        "show top one",
+        "top one",
+        "list best ones",
+        "best ones",
+        "show winner",
+        "winner",
+        "who leader",
+        "who is leader",
+        "who is the leader",
+        "who is champion",
+        "who is the champion",
+        "who is number one",
+        "who is the number one",
+    }:
         return True
     if "that person" in normalized or "that artist" in normalized:
         return True
@@ -212,7 +288,9 @@ def is_substantive_clause(clause: str) -> bool:
 
 def is_same_subject_followup_clause(clause: str) -> bool:
     tokens = set(tokenize(clause))
-    return bool(tokens) and tokens.issubset({"common", "highest", "largest", "lowest", "most", "one", "top"})
+    return bool(tokens) and tokens.issubset(
+        {"common", "first", "highest", "largest", "last", "lowest", "most", "name", "one", "top"}
+    )
 
 
 def mixed_prompt_details(question: str) -> tuple[bool, list[str], list[str]]:
@@ -241,9 +319,20 @@ def unrelated_domain_attribute_terms(question: str) -> list[str]:
         return []
 
     tokens = set(tokenize(question))
-    unrelated = sorted(tokens.intersection(UNRELATED_ATTRIBUTE_TERMS))
-    if unrelated:
-        return unrelated
+    has_business_metric_context = tokens.intersection(
+        {"revenue", "sales", "sale", "invoice", "customer", "artist", "album", "track", "employee", "media", "genre"}
+    )
+    if has_business_metric_context:
+        unrelated_without_business_context = tokens.intersection(UNRELATED_ATTRIBUTE_TERMS) - {"european", "union", "eu"}
+        if unrelated_without_business_context:
+            return sorted(unrelated_without_business_context)
+        unrelated = []
+    elif tokens.intersection(UNRELATED_ATTRIBUTE_TERMS):
+        return sorted(tokens.intersection(UNRELATED_ATTRIBUTE_TERMS))
+    else:
+        unrelated = sorted(tokens.intersection(UNRELATED_ATTRIBUTE_TERMS))
+        if unrelated:
+            return unrelated
 
     normalized = normalize_phrase_text(question)
     phrase_terms = []
