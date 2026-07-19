@@ -26,7 +26,7 @@ from src.data_loader import (  # noqa: E402
     load_user_query_variations,
     merge_repository_with_optimized_descriptions,
 )
-from src.decision_reviewer import review_decision  # noqa: E402
+from src.decision_reviewer import review_decision, select_repository_option_with_gemini  # noqa: E402
 from src.domain_guard import evaluate_domain  # noqa: E402
 from src.formatting import retrieval_rows_for_display, truncate_dataframe  # noqa: E402
 from src.multi_intent_guard import evaluate_multi_intent  # noqa: E402
@@ -45,6 +45,7 @@ from src.sql_executor import SQLExecutor  # noqa: E402
 
 
 runtime_logger = RuntimeLogger(CONFIG)
+ASK_AI_REPOSITORY_OPTION = "__ask_ai__"
 
 
 @st.cache_resource(show_spinner="Loading MiniLM retrieval index...")
@@ -145,6 +146,19 @@ def render_retrieval_details(
 
 def render_repository_option_controls(pending: dict) -> None:
     st.markdown("Choose one repository query to execute:")
+    gemini_api_key_present = bool(os.getenv("GEMINI_API_KEY"))
+    if st.button(
+        "Ask AI to choose the best option",
+        key=f"repo_option_{pending['request_id']}_ask_ai",
+        use_container_width=True,
+        disabled=not gemini_api_key_present,
+        help="Gemini will choose only from the displayed vetted repository options.",
+    ):
+        st.session_state.selected_repository_option = ASK_AI_REPOSITORY_OPTION
+        st.rerun()
+    if not gemini_api_key_present:
+        st.caption("Set `GEMINI_API_KEY` to let AI choose.")
+
     for match in pending["matches"]:
         confidence_percent = round(max(0.0, min(1.0, float(match["hybrid_score"]))) * 100)
         label = f"{match['intent'].title()} — {confidence_percent}% confident"
@@ -176,14 +190,6 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
         st.session_state.selected_repository_option = None
         return
 
-    selected_match = next(
-        (match for match in pending["matches"] if match["query_id"] == selected_query_id),
-        None,
-    )
-    if selected_match is None:
-        st.session_state.selected_repository_option = None
-        return
-
     request_id = new_request_id()
     question = pending["question"]
     effective_question = pending.get("effective_question", question)
@@ -195,18 +201,84 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
     log_event["domain_guard"] = pending.get("domain_guard")
     log_event["multi_intent_guard"] = pending.get("multi_intent_guard")
     started_at = time.perf_counter()
+    selection_source = "manual_repository_option"
+    ai_option_selection = None
+
+    if selected_query_id == ASK_AI_REPOSITORY_OPTION:
+        selection_source = "gemini_repository_option_selector"
+        ai_option_selection = select_repository_option_with_gemini(
+            question,
+            effective_question,
+            pending,
+            request_config,
+        )
+        if not ai_option_selection.usable:
+            response_text = "AI could not confidently choose one of the displayed repository options. Please pick one manually."
+            log_event["retrieval"] = {
+                "status": "ai_selection_failed",
+                "elapsed_ms": round((time.perf_counter() - started_at) * 1000, 3),
+                "top_k": len(pending["matches"]),
+                "matches": retrieval_matches_for_log(pending["matches"]),
+                "selection_source": selection_source,
+                "ai_option_selection": ai_option_selection.to_log(),
+                "thinking_mode_enabled": thinking_mode,
+                "decision": {
+                    "should_execute": False,
+                    "retriever_should_execute": False,
+                    "force_execute": force_execute,
+                    "reason": ai_option_selection.reason,
+                },
+            }
+            log_event["sql"] = {
+                "status": "not_executed",
+                "reason": ai_option_selection.reason,
+                "parameters": {},
+            }
+            log_event["answer"] = {
+                "status": "clarification_requested",
+                "source": "clarification",
+                "gemini_model": CONFIG.gemini_model,
+                "text": response_text,
+            }
+            log_event["elapsed_ms"] = round((time.perf_counter() - started_at) * 1000, 3)
+            runtime_logger.write(log_event)
+
+            with st.chat_message("assistant"):
+                st.warning(response_text)
+                st.caption(ai_option_selection.reason)
+                render_repository_option_controls(pending)
+            st.session_state.messages.append({"role": "assistant", "content": response_text})
+            st.session_state.selected_repository_option = None
+            return
+        selected_query_id = ai_option_selection.query_id or ""
+
+    selected_match = next(
+        (match for match in pending["matches"] if match["query_id"] == selected_query_id),
+        None,
+    )
+    if selected_match is None:
+        st.session_state.selected_repository_option = None
+        return
 
     _, _, executor, parameter_resolver = load_services()
     parameter_resolution = parameter_resolver.resolve(selected_match, effective_question)
-    decision_reason = f"User selected {selected_match['query_id']} from clarification options."
+    if selection_source == "gemini_repository_option_selector" and ai_option_selection is not None:
+        decision_reason = (
+            f"Gemini selected {selected_match['query_id']} from displayed repository options. "
+            f"{ai_option_selection.reason}"
+        ).strip()
+    else:
+        decision_reason = f"User selected {selected_match['query_id']} from clarification options."
     ambiguity_guard = evaluate_ambiguity(effective_question, selected_match, pending["matches"])
 
     log_event["retrieval"] = {
-        "status": "manual_selection",
+        "status": "repository_option_selection",
         "elapsed_ms": 0.0,
         "top_k": len(pending["matches"]),
         "matches": retrieval_matches_for_log(pending["matches"]),
         "selected_match": selected_match_for_log(selected_match),
+        "selection_source": selection_source,
+        "ai_option_selection": ai_option_selection.to_log() if ai_option_selection else None,
         "parameter_resolution": parameter_resolution.to_log(),
         "ambiguity_guard": ambiguity_guard.to_log(),
         "multi_intent_guard": pending.get("multi_intent_guard"),
@@ -220,10 +292,15 @@ def execute_selected_repository_option(selected_query_id: str, force_execute: bo
     }
 
     with st.chat_message("assistant"):
-        st.markdown(
-            f"Selected repository query: **{selected_match['intent']}** "
-            f"(`{selected_match['query_id']}`)."
-        )
+        if selection_source == "gemini_repository_option_selector":
+            st.markdown(f"AI selected repository query: **{selected_match['intent']}**.")
+            if ai_option_selection:
+                st.caption(f"AI selection confidence: `{ai_option_selection.confidence}`. {ai_option_selection.reason}")
+        else:
+            st.markdown(
+                f"Selected repository query: **{selected_match['intent']}** "
+                f"(`{selected_match['query_id']}`)."
+            )
 
         if not parameter_resolution.can_execute:
             response_text = (
