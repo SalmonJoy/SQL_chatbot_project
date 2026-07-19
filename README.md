@@ -29,6 +29,11 @@ Final runtime choice:
 ```text
 chatbot_project/
   app.py
+  Dockerfile
+  docker-constraints.txt          # CPU-only PyTorch constraint for Docker builds
+  docker-compose.yml
+  docker-compose.caddy.yml       # optional HTTPS/domain deployment
+  Caddyfile.example
   requirements.txt
   queries/                     # one vetted SQL file per query_id
   data/
@@ -71,7 +76,7 @@ Optional Gemini setup:
 
 ```bash
 cp .env.example .env
-# edit .env and set GEMINI_API_KEY
+# optionally edit .env and set GEMINI_API_KEY
 ```
 
 If `GEMINI_API_KEY` is not set, the app still works with deterministic retrieval and fallback answers. Follow-up rewriting is skipped.
@@ -132,6 +137,52 @@ Try:
 - Then ask: `is he the highest?`
 - `what is 3x4?` should be blocked as out-of-domain.
 - `which artist has most sales and explain gravity` should be blocked as a mixed-domain prompt.
+
+## Run with Docker on a VPS
+
+Docker Compose is the recommended VPS deployment path because it keeps Python, Streamlit, and model dependencies reproducible.
+
+On the VPS:
+
+```bash
+git clone https://github.com/SalmonJoy/SQL_chatbot_project.git
+cd SQL_chatbot_project
+
+cp .env.example .env
+# edit .env and set GEMINI_API_KEY if you want Gemini rewriting and answer wording
+
+docker compose up -d --build
+```
+
+Open:
+
+```text
+http://<VPS_IP>:8501
+```
+
+Useful commands:
+
+```bash
+docker compose logs -f
+docker compose restart
+docker compose down
+git pull && docker compose up -d --build
+```
+
+The first container start may download the MiniLM model. The Hugging Face cache is persisted in the `hf-cache` Docker volume, so future restarts do not need to download it again. Runtime logs are written to the mounted `./logs/` directory on the VPS.
+
+### Optional HTTPS with a domain
+
+Point your domain's DNS `A` record to the VPS IP, then run:
+
+```bash
+cp Caddyfile.example Caddyfile
+# edit Caddyfile and replace your-domain.example.com with your real domain
+
+docker compose -f docker-compose.caddy.yml up -d --build
+```
+
+For the Caddy setup, open ports `80` and `443` on the VPS firewall. Caddy will reverse proxy to Streamlit and manage HTTPS certificates automatically.
 
 ## Runtime workflow
 

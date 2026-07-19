@@ -1,0 +1,38 @@
+services:
+  sql-chatbot:
+    build:
+      context: .
+    container_name: sql-chatbot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HF_HOME: /app/.cache/huggingface
+      STREAMLIT_SERVER_ADDRESS: 0.0.0.0
+      STREAMLIT_SERVER_PORT: 8501
+      STREAMLIT_SERVER_HEADLESS: "true"
+    expose:
+      - "8501"
+    volumes:
+      - ./logs:/app/logs
+      - hf-cache:/app/.cache/huggingface
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: sql-chatbot-caddy
+    restart: unless-stopped
+    depends_on:
+      - sql-chatbot
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  hf-cache:
+  caddy-data:
+  caddy-config:

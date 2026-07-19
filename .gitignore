@@ -8,6 +8,7 @@ venv/
 .env
 .DS_Store
 logs/
+Caddyfile
 
 # Keep runtime dataset/index files committed deliberately.
 !data/index/.gitkeep

@@ -1,0 +1,15 @@
+.git/
+.env
+logs/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.cache/
+*.log
+chatbot_events.jsonl
+Caddyfile
+.DS_Store
